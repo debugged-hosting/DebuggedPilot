@@ -42,7 +42,8 @@ class CarController():
     lkas_active = True # enabled
 
     if not lkas_active:
-      apply_steer = 0
+      apply_steer = new_steer
+      #apply_steer = 0
 
     self.apply_steer_last = apply_steer
 
