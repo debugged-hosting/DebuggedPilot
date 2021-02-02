@@ -10,6 +10,13 @@ class SteerLimitParams:
   STEER_DELTA_DOWN = 3    # no faults on the way down it seems
   STEER_ERROR_MAX = 80
 
+#   The start of turn is limited by delta up
+#   The return to center is limited by down
+#   You want the wheel to have a quick return to center
+#   You don’t want the turn start to be spastic and go back and forth.
+#   If the delta down is too high it’ll overshoot
+#   If the delta up is too high it’ll overshoot
+
 
 class CAR:
   PACIFICA_2017_HYBRID = "CHRYSLER PACIFICA HYBRID 2017"
