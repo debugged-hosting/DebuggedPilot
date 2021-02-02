@@ -25,8 +25,8 @@ class CarInterface(CarInterfaceBase):
 
     # Speed conversion:              20, 45 mph
     ret.steerActuatorDelay =  0.02 #steer packet is sent every 20 ms
-    ret.steerRateCost = 0.10
-    ret.steerLimitTimer = 0.8
+    ret.steerRateCost = 0.7
+    ret.steerLimitTimer = 0.4
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2  # Pacifica Hybrid 2017
     ret.mass = 1964. + STD_CARGO_KG  # kg curb weight Pacifica 2017
