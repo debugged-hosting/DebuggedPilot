@@ -109,7 +109,7 @@ DBC = {
     'chrysler_pacifica_2017_hybrid_private_fusion'),  # 'radar'
 }
 
-STEER_THRESHOLD = 360 #120
+STEER_THRESHOLD = 220 #120
 
 
 ECU_FINGERPRINT = {
