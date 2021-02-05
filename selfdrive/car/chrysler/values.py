@@ -90,7 +90,7 @@ DBC = {
   CAR.JEEP_CHEROKEE_2019: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
 }
 
-STEER_THRESHOLD = 120
+STEER_THRESHOLD = 180 #120
 
 
 ECU_FINGERPRINT = {
