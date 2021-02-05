@@ -27,6 +27,9 @@ class CarInterface(CarInterfaceBase):
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2  # Pacifica Hybrid 2017
     ret.mass = 1964. + STD_CARGO_KG  # kg curb weight Pacifica 2017
+
+    # PID Tune
+
     ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0375, 0.075], [0.0075, 0.0125]]
     #ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
@@ -36,6 +39,27 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 0.7
     ret.steerLimitTimer = 0.4
 
+    # INDI Tune
+
+    # innerLoopGain is curvature gain.
+    # outerLoopGain is lane centering gain.
+    # timeConstant is smoothness.
+    # actuatorEffectiveness is gain modulation based on accuracy of path.
+    # steerActuatorDelay is how far its looking ahead.
+    # steerRateCost is how eager the steering is to make sudden changes.
+
+    #ret.lateralTuning.init('indi')
+    #ret.lateralTuning.indi.innerLoopGainBP = [0]
+    #ret.lateralTuning.indi.innerLoopGainV = [10.0]
+    #ret.lateralTuning.indi.outerLoopGainBP = [0]
+    #ret.lateralTuning.indi.outerLoopGainV = [8.0]
+    #ret.lateralTuning.indi.timeConstantBP = [0]
+    #ret.lateralTuning.indi.timeConstantV = [5.0]
+    #ret.lateralTuning.indi.actuatorEffectivenessBP = [0]
+    #ret.lateralTuning.indi.actuatorEffectivenessV = [0.2]
+    #ret.steerActuatorDelay = 0.5
+    #ret.steerRateCost = 100.0
+    
     if candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
       ret.wheelbase = 2.91  # in meters
       ret.steerRatio = 12.7
