@@ -34,7 +34,7 @@ class CarController():
     self.steer_rate_limited = False
     moving_fast = True
     self.gone_fast_yet = True
-    lkas_active = moving_fast and enabled
+    lkas_active = True
 
     if not lkas_active:
       apply_steer = 1 # Try, Stock = 0
