@@ -32,8 +32,8 @@ class CarController():
     new_steer = actuators.steer * SteerLimitParams.STEER_MAX
     apply_steer = new_steer #, self.apply_steer_last, CS.out.steeringTorqueEps, SteerLimitParams
     self.steer_rate_limited = new_steer != apply_steer
-
     moving_fast = True
+    self.gone_fast_yet = True
     lkas_active = moving_fast and enabled
 
     if not lkas_active:
