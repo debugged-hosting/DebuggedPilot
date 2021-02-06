@@ -42,7 +42,7 @@ class CarController():
         self.gone_fast_yet = False  # < 14.5m/s stock turns off this bit, but fine down to 13.5
     lkas_active = moving_fast and enabled
 
-    if not lkas_active and enabled:
+    if not enabled #lkas_active:
       apply_steer = True
 
     # dp
