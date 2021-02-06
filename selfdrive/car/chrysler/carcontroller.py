@@ -37,7 +37,7 @@ class CarController():
     lkas_active = True
 
     if not lkas_active:
-      apply_steer = 1 # Try, Stock = 0
+      apply_steer = 0
 
     # dp
     blinker_on = CS.out.leftBlinker or CS.out.rightBlinker
