@@ -30,13 +30,14 @@ class CarController():
     # *** compute control surfaces ***
     # steer torque
     new_steer = actuators.steer * SteerLimitParams.STEER_MAX
-    apply_steer = new_steer #apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last,
-    #                                               CS.out.steeringTorqueEps, SteerLimitParams)
+    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last,
+                                                   CS.out.steeringTorqueEps, SteerLimitParams)
+    self.gone_fast_yet = True
     self.steer_rate_limited = new_steer != apply_steer
 
     moving_fast = True #CS.out.vEgo > CS.CP.minSteerSpeed  # for status message
-    if CS.out.vEgo > (CS.CP.minSteerSpeed - 0):  # for command high bit
-      self.gone_fast_yet = True
+    #if CS.out.vEgo > (CS.CP.minSteerSpeed - 0):  # for command high bit
+    #  self.gone_fast_yet = True
     elif self.car_fingerprint in (CAR.PACIFICA_2019_HYBRID, CAR.JEEP_CHEROKEE_2019):
       if CS.out.vEgo < (CS.CP.minSteerSpeed - 3.0):
         self.gone_fast_yet = False  # < 14.5m/s stock turns off this bit, but fine down to 13.5
