@@ -30,7 +30,7 @@ class CarController():
     # *** compute control surfaces ***
     # steer torque
     new_steer = actuators.steer * SteerLimitParams.STEER_MAX
-    apply_steer = new_steer, self.apply_steer_last, CS.out.steeringTorqueEps #apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last,
+    apply_steer = new_steer, self.apply_steer_last #apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last,
     #                                               CS.out.steeringTorqueEps, SteerLimitParams)
     self.steer_rate_limited = new_steer != apply_steer
 
