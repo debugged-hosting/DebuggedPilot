@@ -14,10 +14,10 @@ def create_lkas_hud(packer, gear, lkas_active, hud_alert, hud_count, lkas_car_mo
 
   color = 1  # default values are for park or neutral in 2017 are 0 0, but trying 1 1 for 2019
   lines = 1
-  alerts = 1
+  alerts = 0
 
   if hud_count < (1 * 4):  # first 3 seconds, 4Hz
-    alerts = 1
+    alerts = 0 #1
   # CAR.PACIFICA_2018_HYBRID and CAR.PACIFICA_2019_HYBRID
   # had color = 1 and lines = 1 but trying 2017 hybrid style for now.
   if gear in (GearShifter.drive, GearShifter.reverse, GearShifter.low):
