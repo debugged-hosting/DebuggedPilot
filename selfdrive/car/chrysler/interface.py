@@ -60,6 +60,8 @@ class CarInterface(CarInterfaceBase):
     #ret.steerActuatorDelay = 0.5
     #ret.steerRateCost = 100.0
     
+    ret.minSteerSpeed = 0
+
     if candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
       ret.wheelbase = 2.91  # in meters
       ret.steerRatio = 12.7
