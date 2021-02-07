@@ -106,7 +106,7 @@ static int chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (addr == 320) {
       brake_pressed = (GET_BYTE(to_push, 0) & 0x7) == 5;
       if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
-        controls_allowed = 0;
+        controls_allowed = 1;
       }
       brake_pressed_prev = brake_pressed;
     }
