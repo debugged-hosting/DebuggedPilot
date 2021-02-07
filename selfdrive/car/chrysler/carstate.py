@@ -5,6 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 
+ret.cruiseState.enabled = self.pcm_acc_active
 self.pcm_acc_active = True
 
 class CarState(CarStateBase):
