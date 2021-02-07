@@ -22,10 +22,11 @@ def create_lkas_hud(packer, gear, lkas_active, hud_alert, hud_count, lkas_car_mo
   # had color = 1 and lines = 1 but trying 2017 hybrid style for now.
   if gear in (GearShifter.drive, GearShifter.reverse, GearShifter.low):
     if lkas_active:
-      color = 2  # control active, display green.
-      lines = 6
+      color = 3  # 1 is white, 2 is green, 3 is active
+      lines = 6  # 1 is , 2 is left white, 3 is right white, 4 is left over line, 5 is left over line, 6 is both white, 7 is left active
+      # 8 is left active as well, 9 is right active, 10 is also right active, 11 is left over line, 12 is right over line
     else:
-      color = 1  # control off, display white.
+      color = 1  # display white.
       lines = 1
 
   values = {
