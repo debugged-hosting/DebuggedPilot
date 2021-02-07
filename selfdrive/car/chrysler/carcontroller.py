@@ -43,7 +43,8 @@ class CarController():
     lkas_active = moving_fast and enabled
 
     if not enabled: #lkas_active:
-      apply_steer = True
+      apply_steer = apply_toyota_steer_torque_limits(new_steer, self.apply_steer_last,
+                                                   CS.out.steeringTorqueEps, SteerLimitParams)
 
     # dp
     blinker_on = CS.out.leftBlinker or CS.out.rightBlinker
