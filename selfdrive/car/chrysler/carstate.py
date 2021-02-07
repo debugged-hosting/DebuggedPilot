@@ -8,7 +8,7 @@ from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.pcm_acc_active = False
+    self.pcm_acc_active = True
     can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = can_define.dv["GEAR"]['PRNDL']
 
@@ -46,12 +46,8 @@ class CarState(CarStateBase):
     ret.steeringRate = cp.vl["STEERING"]['STEERING_RATE']
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl['GEAR']['PRNDL'], None))
 
-    if cp.vl["ACC_2"]['ACC_STATUS_2'] == 7:  # ACC is green.
-       self.pcm_acc_active = True
-    ret.cruiseState.enabled = self.pcm_acc_active
-
-    #ret.cruiseState.enabled = cp.vl["ACC_2"]['ACC_STATUS_2'] == 7  # ACC is green.
-    #ret.cruiseState.available = ret.cruiseState.enabled  # FIXME: for now same as enabled
+    ret.cruiseState.enabled = cp.vl["ACC_2"]['ACC_STATUS_2'] == 7  # ACC is green.
+    ret.cruiseState.available = ret.cruiseState.enabled  # FIXME: for now same as enabled
     ret.cruiseState.speed = cp.vl["DASHBOARD"]['ACC_SPEED_CONFIG_KPH'] * CV.KPH_TO_MS
 
     ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
