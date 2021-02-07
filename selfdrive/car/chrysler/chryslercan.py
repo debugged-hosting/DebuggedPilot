@@ -14,7 +14,7 @@ def create_lkas_hud(packer, gear, lkas_active, hud_alert, hud_count, lkas_car_mo
 
   color = 1  # default values are for park or neutral in 2017 are 0 0, but trying 1 1 for 2019
   lines = 1
-  alerts = 0
+  alerts = 1
 
   if hud_count < (1 * 4):  # first 3 seconds, 4Hz
     alerts = 1
