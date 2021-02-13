@@ -46,7 +46,7 @@ else:
     ip = "255.255.255.255"
   error_tags = {'dirty': dirty, 'username': dongle_id, 'dongle_id': dongle_id, 'branch': branch, 'remote': origin}
 
-  client = Client('http://7107f046f45b4b4f9b277d0684bc9281@sentry.dragonpilot.cn:9000/2',
+  client = Client('https://9d6519597aee4133b8f9b2c1ad84b1c2@o400203.ingest.sentry.io/5625533',
                   install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
 
   def capture_exception(*args, **kwargs):
