@@ -82,6 +82,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
       ("STEER_ANGLE", "STEERING", 0),
       ("STEERING_RATE", "STEERING", 0),
+      ("STEER_ANGLE_HIGH_PRECISION", "STEERING", 0),
       ("TURN_SIGNALS", "STEERING_LEVERS", 0),
       ("ACC_STATUS_2", "ACC_2", 0),
       ("HIGH_BEAM_FLASH", "STEERING_LEVERS", 0),
