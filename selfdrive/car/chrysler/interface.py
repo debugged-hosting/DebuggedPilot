@@ -37,7 +37,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 0.7 #0.7 works well
     ret.steerLimitTimer = 0.4
  
-    ret.minSteerSpeed = 0
+    ret.minSteerSpeed = 0.
 
     ### OLD TUNE - WORKS GOOD BUT JERKY ###
 
