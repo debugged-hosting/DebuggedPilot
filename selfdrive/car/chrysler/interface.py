@@ -28,16 +28,25 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 16.2  # Pacifica Hybrid 2017
     ret.mass = 1964. + STD_CARGO_KG  # kg curb weight Pacifica 2017
 
-    # PID Tune
+    # Current PID Tune
 
     ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
-    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0375, 0.075], [0.0075, 0.0125]]
+    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01875, 0.0375], [0.00375, 0.00625]]
     ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.7 #0.7 works well
     ret.steerLimitTimer = 0.4
  
     ret.minSteerSpeed = 0
+
+    ### OLD TUNE - WORKS GOOD BUT JERKY ###
+
+    #ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
+    #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0375, 0.075], [0.0075, 0.0125]]
+    #ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+    #et.steerActuatorDelay = 0.1
+    #ret.steerRateCost = 0.7 #0.7 works well
+    #ret.steerLimitTimer = 0.4
 
     ### STOCK TUNE ###
 
