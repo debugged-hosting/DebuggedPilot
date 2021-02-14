@@ -114,7 +114,7 @@ else:
   if len(u_tag) > 0:
     error_tags['username'] = ''.join(u_tag)
 
-  client = Client('https://02adbf0d37054eb2b0ef44ef41f1e320@o400203.ingest.sentry.io/5270413',
+  client = Client('https://151ca18ad2474009a6337b8f106bd435@o400203.ingest.sentry.io/5636305',
                   install_sys_hook=False, transport=HTTPTransport, release=version, tags=error_tags)
 
   def capture_exception(*args, **kwargs):
