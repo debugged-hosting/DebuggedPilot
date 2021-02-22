@@ -264,6 +264,13 @@ class CarState(CarStateBase):
     # accept and respond to HCA_01 messages and has not encountered a fault.
     self.steeringFault = pt_cp.vl["Lenkhilfe_2"]['LH2_Sta_HCA'] not in [3, 5]
 
+    #TODO fill fix value for pq
+    self.ldw_lane_warning_left = False
+    self.ldw_lane_warning_right = False
+    self.ldw_side_dlc_tlc = False
+    self.ldw_dlc = 0.0
+    self.ldw_tlc = 0.0
+
     return ret
 
   @staticmethod
