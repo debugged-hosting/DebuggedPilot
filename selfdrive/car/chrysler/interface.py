@@ -27,13 +27,34 @@ class CarInterface(CarInterfaceBase):
     # Speed conversion:              20, 45 mph
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2  # Pacifica Hybrid 2017
-    ret.mass = 2858. + STD_CARGO_KG  # kg curb weight Pacifica Hybrid 2017
-    ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kfBP = [[9., 20.], [9., 20.], [0.]]
-    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV, ret.lateralTuning.pid.kfV = [[0.15,0.30], [0.03,0.05], [0.00006]] # full torque for 10 deg at 80mph means 0.00007818594
-    ret.lateralTuning.pid.kfV = [0.00006]   # full torque for 10 deg at 80mph means 0.00007818594
-    ret.steerActuatorDelay = 0.1
-    ret.steerRateCost = 0.7
+    ret.mass = 1964. + STD_CARGO_KG  # kg curb weight Pacifica 2017
+
+    ### CURRENT TUNE - WORKS GOOD BUT JERKY ###
+
+    ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
+    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0375, 0.075], [0.0075, 0.0125]]
+    ret.lateralTuning.pid.kf = [0.00006]   # full torque for 10 deg at 80mph means 0.00007818594
+    ret.steerActuatorDelay = 0.1 # in seconds
+    ret.steerRateCost = 0.7 #0.7 works well
     ret.steerLimitTimer = 0.4
+
+    ## ARNE STOCK TUNE ##
+
+    #ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kfBP = [[9., 20.], [9., 20.], [0.]]
+    #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV, ret.lateralTuning.pid.kfV = [[0.15,0.30], [0.03,0.05], [0.00006]] # full torque for 10 deg at 80mph means 0.00007818594
+    #ret.lateralTuning.pid.kfV = [0.00006]   # full torque for 10 deg at 80mph means 0.00007818594
+    #ret.steerActuatorDelay = 0.1
+    #ret.steerRateCost = 0.7
+    #ret.steerLimitTimer = 0.4
+
+    ### STOCK TUNE ###
+
+    #ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
+    #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
+    #ret.lateralTuning.pid.kf = [0.00006]   # full torque for 10 deg at 80mph means 0.00007818594
+    #ret.steerActuatorDelay = 0.1
+    #ret.steerRateCost = 0.7
+    #ret.steerLimitTimer = 0.4
 
     if candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
       ret.wheelbase = 2.91  # in meters
@@ -57,7 +78,7 @@ class CarInterface(CarInterfaceBase):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
 
-    ret.enableCamera = bool(is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay)
+    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
     print("ECU Camera Simulated: {0}".format(ret.enableCamera))
 
     return ret
