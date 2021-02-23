@@ -28,33 +28,45 @@ class CarInterface(CarInterfaceBase):
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2  # Pacifica Hybrid 2017
     ret.mass = 1964. + STD_CARGO_KG  # kg curb weight Pacifica 2017
-
-    ### CURRENT TUNE - WORKS GOOD BUT JERKY ###
-
-    ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
-    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0375, 0.075], [0.0075, 0.0125]]
-    ret.lateralTuning.pid.kf = [0.00006]   # full torque for 10 deg at 80mph means 0.00007818594
-    ret.steerActuatorDelay = 0.1 # in seconds
-    ret.steerRateCost = 0.7 #0.7 works well
     ret.steerLimitTimer = 0.4
+    ret.minSteerSpeed = 0.01 # TF DEVICE
+
+    ### INDI TUNE ###
+
+    ret.lateralTuning.init('indi')
+    ret.lateralTuning.indi.innerLoopGainBP = [0]
+    ret.lateralTuning.indi.innerLoopGainV = [4.0]
+    ret.lateralTuning.indi.outerLoopGainBP = [0]
+    ret.lateralTuning.indi.outerLoopGainV = [3.0]
+    ret.lateralTuning.indi.timeConstantBP = [0]
+    ret.lateralTuning.indi.timeConstantV = [1.0]
+    ret.lateralTuning.indi.actuatorEffectivenessBP = [0]
+    ret.lateralTuning.indi.actuatorEffectivenessV = [1.0]
+    ret.steerActuatorDelay = 0.5
+    
+    ### MY PID TUNE - WORKS GOOD BUT JERKY ###
+
+    #ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
+    #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0375, 0.075], [0.0075, 0.0125]]
+    #ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+    #ret.steerActuatorDelay = 0.1 # in seconds
+    #ret.steerRateCost = 0.7 #0.7 works well
 
     ## ARNE STOCK TUNE ##
 
     #ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kfBP = [[9., 20.], [9., 20.], [0.]]
     #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV, ret.lateralTuning.pid.kfV = [[0.15,0.30], [0.03,0.05], [0.00006]] # full torque for 10 deg at 80mph means 0.00007818594
-    #ret.lateralTuning.pid.kfV = [0.00006]   # full torque for 10 deg at 80mph means 0.00007818594
+    #ret.lateralTuning.pid.kfV = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
     #ret.steerActuatorDelay = 0.1
     #ret.steerRateCost = 0.7
-    #ret.steerLimitTimer = 0.4
 
     ### STOCK TUNE ###
 
     #ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
     #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
-    #ret.lateralTuning.pid.kf = [0.00006]   # full torque for 10 deg at 80mph means 0.00007818594
+    #ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
     #ret.steerActuatorDelay = 0.1
     #ret.steerRateCost = 0.7
-    #ret.steerLimitTimer = 0.4
 
     ret.minSteerSpeed = 0.
    
