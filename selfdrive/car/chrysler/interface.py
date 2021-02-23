@@ -29,9 +29,17 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 16.2  # Pacifica Hybrid 2017
     ret.mass = 1964. + STD_CARGO_KG  # kg curb weight Pacifica 2017
     ret.steerLimitTimer = 0.4
-    ret.minSteerSpeed = 0.01 # TF DEVICE
+    ret.steerRateCost = 0.7 #0.7 works well
+    ret.minSteerSpeed = 0 # TF DEVICE
 
     ### INDI TUNE ###
+
+    # innerLoopGain is curvature gain.
+    # outerLoopGain is lane centering gain.
+    # timeConstant is smoothness.
+    # actuatorEffectiveness is gain modulation based on accuracy of path.
+    # steerActuatorDelay is how far its looking ahead.
+    # steerRateCost is how eager the steering is to make sudden changes.
 
     ret.lateralTuning.init('indi')
     ret.lateralTuning.indi.innerLoopGainBP = [0]
