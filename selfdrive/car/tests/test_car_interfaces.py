@@ -26,7 +26,7 @@ class TestCarInterfaces(unittest.TestCase):
 
       car_fw = []
       sm = messaging.SubMaster(['dragonConf'])
-      car_params = CarInterface.get_params(car_name, fingerprints, car_fw, has_relay)
+      car_params = CarInterface.get_params(car_name, fingerprints, car_fw)
       car_interface = CarInterface(car_params, CarController, CarState)
       assert car_params
       assert car_interface
