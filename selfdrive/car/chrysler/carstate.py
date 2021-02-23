@@ -5,7 +5,6 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -42,7 +41,7 @@ class CarState(CarStateBase):
 
     ret.leftBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     ret.rightBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
-    ret.steeringAngle = cp.vl["STEERING"]['STEER_ANGLE']
+    ret.steeringAngle = cp.vl["STEERING"]['STEER_ANGLE'] + cp.vl["STEERING"]['STEER_ANGLE_HIGH_PRECISION']
     ret.steeringRate = cp.vl["STEERING"]['STEERING_RATE']
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl['GEAR']['PRNDL'], None))
 
@@ -54,7 +53,7 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     steer_state = cp.vl["EPS_STATUS"]["LKAS_STATE"]
-    ret.steerError = steer_state == 4 or (steer_state == 0 and ret.vEgo > self.CP.minSteerSpeed)
+    ret.steerError = steer_state == 4 or steer_state == 0 #and ret.vEgo > self.CP.minSteerSpeed)
 
     ret.genericToggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])
 
@@ -83,6 +82,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
       ("STEER_ANGLE", "STEERING", 0),
       ("STEERING_RATE", "STEERING", 0),
+      ("STEER_ANGLE_HIGH_PRECISION", "STEERING", 0),
       ("TURN_SIGNALS", "STEERING_LEVERS", 0),
       ("ACC_STATUS_2", "ACC_2", 0),
       ("HIGH_BEAM_FLASH", "STEERING_LEVERS", 0),
