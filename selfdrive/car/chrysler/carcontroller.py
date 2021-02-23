@@ -34,7 +34,7 @@ class CarController():
                                                    CS.out.steeringTorqueEps, SteerLimitParams)
     self.steer_rate_limited = new_steer != apply_steer
 
-    moving_fast = True #CS.out.vEgo > CS.CP.minSteerSpeed  # for status message
+    #moving_fast = True #CS.out.vEgo > CS.CP.minSteerSpeed  # for status message
     self.gone_fast_yet = True
     if CS.out.vEgo > (CS.CP.minSteerSpeed - 0):  # for command high bit
       self.gone_fast_yet = True
