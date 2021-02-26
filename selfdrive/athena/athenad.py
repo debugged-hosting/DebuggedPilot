@@ -20,15 +20,15 @@ from websocket import ABNF, WebSocketTimeoutException, create_connection
 
 import cereal.messaging as messaging
 from cereal.services import service_list
-from common.hardware import HARDWARE
 from common.api import Api
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
+from selfdrive.hardware import HARDWARE
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
 
-ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://10.128.254.254')
+ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = set([8022])
 
@@ -219,6 +219,11 @@ def getSshAuthorizedKeys():
 @dispatcher.add_method
 def getSimInfo():
   return HARDWARE.get_sim_info()
+
+
+@dispatcher.add_method
+def getNetworkType():
+  return HARDWARE.get_network_type()
 
 
 @dispatcher.add_method
