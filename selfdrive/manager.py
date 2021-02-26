@@ -525,7 +525,7 @@ def manager_thread():
         else:
           start_managed_process(p)
     else:
-      logger_dead = False
+      logger_dead = True
       driver_view = params.get("IsDriverViewEnabled") == b"1"
 
       # TODO: refactor how manager manages processes
