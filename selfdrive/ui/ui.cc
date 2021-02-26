@@ -287,6 +287,7 @@ void update_sockets(UIState *s) {
     scene.isReversing = data.getGearShifter() == cereal::CarState::GearShifter::REVERSE;
     scene.leftBlindspot = data.getLeftBlindspot();
     scene.rightBlindspot = data.getRightBlindspot();
+    scene.engineRPM = data.getEngineRPM();
   }
   s->started = scene.thermal.getStarted() || scene.frontview;
 }

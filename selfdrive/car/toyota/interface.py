@@ -42,6 +42,7 @@ class CarInterface(CarInterfaceBase):
     if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H, CAR.PRIUS_TSS2]:  # These cars use LQR/INDI
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kfBP = [[0.], [0.], [0.]]
+      ret.lateralTuning.pid.kdBP, ret.lateralTuning.pid.kdV = [[0.], [0.]]
       ret.lateralTuning.pid.newKfTuned = False
 
     if candidate == CAR.PRIUS:
@@ -73,7 +74,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
       #ret.stoppingBrakeRate = 0.16 # reach stopping target smoothly
       #ret.startingBrakeRate = 0.9 # release brakes fast
-      #ret.startAccel = 1.60 # Accelerate from 0 faster
+      #ret.startAccel = 1.3 # Accelerate from 0 faster
       stop_and_go = True
       ret.safetyParam = 55
       ret.wheelbase = 2.70002
@@ -81,25 +82,18 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
       ret.steerActuatorDelay = 0.5
-      #ret.steerLimitTimer = 0.1 #5.0
-      #ret.steerRateCost = 0.25 #0.45
-      #ret.steerLimitTimer = 5.0
+      ret.steerLimitTimer = 0.70
       if prius_pid:
         ret.lateralTuning.init('pid')
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kfBP = [[0.], [0.], [0.]]
-        ret.lateralTuning.pid.newKfTuned = False
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.21], [0.008]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.08], [0.02]]
+        ret.lateralTuning.pid.kdV = [0.0]
         ret.lateralTuning.pid.kfV = [0.00009531750004645412]
+        ret.lateralTuning.pid.newKfTuned = True
       else:
+        ret.steerRateCost = 0.45 #0.45
+        ret.steerLimitTimer = 5.0
         ret.lateralTuning.init('indi')
-        ret.lateralTuning.indi.innerLoopGainBP = [16.7, 25, 30]
-        ret.lateralTuning.indi.innerLoopGainV = [4.0, 4.06, 4.1]
-        ret.lateralTuning.indi.outerLoopGainBP = [16.7, 25, 30]
-        ret.lateralTuning.indi.outerLoopGainV = [3.0, 3.02, 3.06]
-        ret.lateralTuning.indi.timeConstantBP = [0]
-        ret.lateralTuning.indi.timeConstantV = [0.1]
-        ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 30]
-        ret.lateralTuning.indi.actuatorEffectivenessV = [1.0, 1.1]
         #ret.lateralTuning.indi.innerLoopGainBP = [16.7, 25]
         #ret.lateralTuning.indi.innerLoopGainV = [15, 15]
         #ret.lateralTuning.indi.outerLoopGainBP = [8.3, 25, 27.7, 36.1]
@@ -109,14 +103,14 @@ class CarInterface(CarInterfaceBase):
         #ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 25]
         #ret.lateralTuning.indi.actuatorEffectivenessV = [15, 15]
         #ret.lateralTuning.init('indi') #really good tune from cgw.
-        #ret.lateralTuning.indi.innerLoopGainBP = [16.7, 25, 36.1]
-        #ret.lateralTuning.indi.innerLoopGainV = [9.5, 15, 15]
-        #ret.lateralTuning.indi.outerLoopGainBP = [16.7, 25, 36.1]
-        #ret.lateralTuning.indi.outerLoopGainV = [9.5, 14.99, 14.99]
-        #ret.lateralTuning.indi.timeConstantBP = [16.7, 16.71, 22, 22.01, 26, 26.01, 36, 36.01]
-        #ret.lateralTuning.indi.timeConstantV = [0.5, 1, 1, 2, 2, 4, 4, 5]
-        #ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 25, 36.1]
-        #ret.lateralTuning.indi.actuatorEffectivenessV = [9.5, 15, 15]
+        ret.lateralTuning.indi.innerLoopGainBP = [16.7, 25, 36.1]
+        ret.lateralTuning.indi.innerLoopGainV = [9.5, 15, 15]
+        ret.lateralTuning.indi.outerLoopGainBP = [16.7, 25, 36.1]
+        ret.lateralTuning.indi.outerLoopGainV = [9.5, 14.99, 14.99]
+        ret.lateralTuning.indi.timeConstantBP = [16.7, 16.71, 22, 22.01, 26, 26.01, 36, 36.01]
+        ret.lateralTuning.indi.timeConstantV = [0.5, 1, 1, 2, 2, 4, 4, 5]
+        ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 25, 36.1]
+        ret.lateralTuning.indi.actuatorEffectivenessV = [9.5, 15, 15]
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
@@ -148,7 +142,8 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
-      ret.lateralTuning.pid.kfV = [0.00003]   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kfV = [0.00006908923778520113]   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.newKfTuned = True
 
     elif candidate == CAR.LEXUS_RX:
       stop_and_go = True
@@ -478,6 +473,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
+    ret.engineRPM = self.CS.engineRPM
 
     # gear except P, R
     extra_gears = [GearShifter.neutral, GearShifter.eco, GearShifter.manumatic, GearShifter.drive, GearShifter.sport, GearShifter.low, GearShifter.brake, GearShifter.unknown]

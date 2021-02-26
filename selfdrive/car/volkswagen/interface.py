@@ -35,6 +35,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     ret.communityFeature = True
+    ret.lateralTuning.pid.kdBP, ret.lateralTuning.pid.kdV = [[0.], [0.]]
 
     # Set global default parameters
     ret.radarOffCan = True

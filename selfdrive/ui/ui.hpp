@@ -181,6 +181,7 @@ typedef struct UIScene {
   // for blind spot
   bool leftBlindspot;
   bool rightBlindspot;
+  int engineRPM;
 
   // for updating icon
   int dp_alert_rate;
