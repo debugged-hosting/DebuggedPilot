@@ -8,8 +8,8 @@ class LatControlPID():
   def __init__(self, CP):
     self.pid = PIController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                            k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
-                            sat_limit=CP.steerLimitTimer)
+                            (CP.lateralTuning.pid.kdBP, CP.lateralTuning.pid.kdV),
+                            k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0, sat_limit=CP.steerLimitTimer)
     self.new_kf_tuned = CP.lateralTuning.pid.newKfTuned
     self.angle_steers_des = 0.
 

@@ -202,6 +202,7 @@ struct CarState {
   # dp
   lkMode @37 :Bool;
   stopSteering @38 :Bool; # timebomb - stopSteering
+  engineRPM @39 :Float32;
 
   struct WheelSpeeds {
     # optional wheel speeds
@@ -447,6 +448,8 @@ struct CarParams {
     kfV @5 :List(Float32);
     kfBP @6 :List(Float32);
     newKfTuned @7 :Bool;
+    kdBP @8 :List(Float32);
+    kdV @9 :List(Float32);
   }
 
   struct LongitudinalPIDTuning {
