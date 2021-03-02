@@ -20,11 +20,11 @@ fi
 # Update apt
 apt update
 apt install -y --allow-unauthenticated opencv
-apt install -y --allow-unauthenticated scipy
+apt install -y --allow-unauthenticated scipy=1.5.4 numpy=1.19.0
 apt install gcc-8 -y
 setupclang-gfort-8
-python3 -m pip install overpy
-python3 -m pip install scipy
+python3 -m pip install overpy scipy==1.5.4 numpy==1.19.0
+#python3 -m pip install scipy
 # python3 -m pip install requests
 # python3 -m pip install pyzmq
 # python3 -m pip install pycapnp
