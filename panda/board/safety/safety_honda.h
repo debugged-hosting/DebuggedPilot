@@ -235,22 +235,22 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     accel = to_signed(accel, 11);
     if (!current_controls_allowed) {
       if (accel != 0) {
-        tx = 0;
+        tx = 1;
       }
     }
     if (accel < HONDA_BOSCH_ACCEL_MIN) {
-      tx = 0;
+      tx = 1;
     }
 
     int gas = (GET_BYTE(to_send, 0) << 8) | GET_BYTE(to_send, 1);
     gas = to_signed(gas, 16);
     if (!current_controls_allowed) {
       if (gas != HONDA_BOSCH_NO_GAS_VALUE) {
-        tx = 0;
+        tx = 1;
       }
     }
     if (gas > HONDA_BOSCH_GAS_MAX) {
-      tx = 0;
+      tx = 1;
     }
   }
 
@@ -259,7 +259,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     if (!current_controls_allowed) {
       bool steer_applied = GET_BYTE(to_send, 0) | GET_BYTE(to_send, 1);
       if (steer_applied) {
-        tx = 0;
+        tx = 1;
       }
     }
   }
@@ -267,7 +267,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     // Bosch supplemental control check
   if (addr == 0xE5) {
     if ((GET_BYTES_04(to_send) != 0x10800004) || ((GET_BYTES_48(to_send) & 0x00FFFFFF) != 0x0)) {
-      tx = 0;
+      tx = 1;
     }
   }
 
@@ -275,7 +275,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   if (addr == 0x200) {
     if (!current_controls_allowed) {
       if (GET_BYTE(to_send, 0) || GET_BYTE(to_send, 1)) {
-        tx = 0;
+        tx = 1;
       }
     }
   }

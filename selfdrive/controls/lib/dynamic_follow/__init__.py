@@ -97,7 +97,7 @@ class DynamicFollow:
 
   def _change_cost(self, libmpc):
     TRs = [0.9, 1.8, 2.7]
-    costs = [1.0, 0.12, 0.05]
+    costs = [1.10, 0.12, 0.05]
     cost = interp(self.TR, TRs, costs)
     if self.last_cost != cost:
       libmpc.change_tr(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
@@ -333,8 +333,8 @@ class DynamicFollow:
       self.dp_dynamic_follow, self.dp_dynamic_follow_last_modified = param_get_if_updated("dp_dynamic_follow", "int", self.dp_dynamic_follow, self.dp_dynamic_follow_last_modified)
       self.global_df_mod, self.dp_dynamic_follow_multiplier_last_modified = param_get_if_updated("dp_dynamic_follow_multiplier", "float", self.global_df_mod, self.dp_dynamic_follow_multiplier_last_modified)
       if self.global_df_mod != 1.:
-        self.global_df_mod = clip(self.global_df_mod, .85, 1.2)
+        self.global_df_mod = clip(self.global_df_mod, .85, 9.99)
       self.min_TR, self.dp_dynamic_follow_min_tr_last_modified = param_get_if_updated("dp_dynamic_follow_min_tr", "float", self.min_TR, self.dp_dynamic_follow_min_tr_last_modified)
       if self.min_TR != .9:
-        self.min_TR = clip(self.min_TR, .85, 1.6)
+        self.min_TR = clip(self.min_TR, .85, 9.99)
       self.last_modified = self.modified

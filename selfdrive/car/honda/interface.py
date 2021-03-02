@@ -126,6 +126,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
     ret.carName = "honda"
     ret.lateralTuning.init('pid')
+    ret.lateralTuning.pid.newKfTuned = False
 
     if candidate in HONDA_BOSCH:
       ret.safetyModel = car.CarParams.SafetyModel.hondaBoschHarness if has_relay else car.CarParams.SafetyModel.hondaBoschGiraffe
@@ -151,6 +152,7 @@ class CarInterface(CarInterfaceBase):
     # For modeling details, see p.198-200 in "The Science of Vehicle Dynamics (2014), M. Guiggiani"
     ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0], [0]]
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kfBP = [[0.], [0.], [0.]]
+    ret.lateralTuning.pid.kdBP, ret.lateralTuning.pid.kdV = [[0.], [0.]]
     ret.lateralTuning.pid.kfV = [0.00006]  # conservative feed-forward
 
     eps_modified = False
@@ -534,8 +536,8 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = self.create_common_events(ret, pcm_enable=False)
-    if not self.CS.lkMode or (dragonconf.dpAtl and ret.vEgo <= self.CP.minEnableSpeed):
-      events.add(EventName.manualSteeringRequired)
+    #if not self.CS.lkMode or (dragonconf.dpAtl and ret.vEgo <= self.CP.minEnableSpeed):
+      #events.add(EventName.manualSteeringRequired)
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
     if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:

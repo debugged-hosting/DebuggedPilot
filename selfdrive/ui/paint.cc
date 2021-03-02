@@ -8,6 +8,7 @@
 #include <map>
 #include <cmath>
 #include <iostream>
+#include "common/timing.h"
 #include "common/util.h"
 #include <algorithm>
 
@@ -108,7 +109,7 @@ static void draw_chevron(UIState *s, float x_in, float y_in, float sz,
 static void ui_draw_circle_image(NVGcontext *vg, float x, float y, int size, int image, NVGcolor color, float img_alpha, int img_y = 0) {
   const int img_size = size * 1.5;
   nvgBeginPath(vg);
-  nvgCircle(vg, x, y + (bdr_s * 1.5), size);
+  nvgCircle(vg, x, y + (bdr_is * 1.5), size);
   nvgFillColor(vg, color);
   nvgFill(vg);
   ui_draw_image(vg, x - (img_size / 2), img_y ? img_y : y - (size / 4), img_size, img_size, image, img_alpha);
@@ -134,7 +135,7 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
-  draw_chevron(s, d_rel, lead.getYRel(), 25, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
+  draw_chevron(s, d_rel, lead.getYRel(), 25, nvgRGBA(20, 20, 20, fillAlpha), nvgRGBA(255, 255, 255, 255));
 }
 
 static void ui_draw_line(UIState *s, const vertex_data *v, const int cnt, NVGcolor *color, NVGpaint *paint) {
@@ -240,7 +241,18 @@ static void ui_draw_vision_lane_lines(UIState *s) {
     if(s->sm->updated("modelV2")) {
       update_line_data(s, scene->model.getLaneLines()[ll_idx], 0.025*scene->model.getLaneLineProbs()[ll_idx], pvd_ll + ll_idx, scene->max_distance);
     }
-    NVGcolor color = nvgRGBAf(1.0, 1.0, 1.0, scene->lane_line_probs[ll_idx]);
+    NVGcolor color;
+    if (ll_idx == 1 || ll_idx == 2) {
+      const cereal::ModelDataV2::XYZTData::Reader &line = scene->model.getLaneLines()[ll_idx];
+
+      const float default_pos = 1.4;  // when lane poly isn't available
+      const float lane_pos = line.getY().size() > 0 ? std::abs(line.getY()[0]) : default_pos;  // get redder when line is closer to car
+      float hue = 332.5 * lane_pos - 332.5;  // equivalent to {1.4, 1.0}: {133, 0} (green to red)
+      hue = fmin(133, fmax(0, hue)) / 360.;  // clip and normalize
+      color = nvgHSLA(hue, 0.73, 0.64, scene->lane_line_probs[ll_idx] * 255);
+    } else {
+      color = nvgHSLA(133 / 360., 0.73, 0.64, scene->lane_line_probs[ll_idx] * 255);
+    }
     ui_draw_line(s, (pvd_ll + ll_idx)->v, (pvd_ll + ll_idx)->cnt, &color, nullptr);
   }
 
@@ -315,8 +327,8 @@ static void ui_draw_vision_maxspeed(UIState *s) {
                        is_cruise_set && maxspeed_calc > (speedlim_calc + speed_lim_off);
   int viz_maxspeed_w = 184;
   int viz_maxspeed_h = 202;
-  int viz_maxspeed_x = (s->video_rect.x + (bdr_is*2));
-  int viz_maxspeed_y = (s->video_rect.y + (bdr_is*1.5));
+  int viz_maxspeed_x = (s->scene.viz_rect.x + (bdr_is*2));
+  int viz_maxspeed_y = (s->scene.viz_rect.y + (bdr_is*1.5));
   int viz_maxspeed_xo = 180;
   viz_maxspeed_w += viz_maxspeed_xo;
   viz_maxspeed_x += viz_maxspeed_w - (viz_maxspeed_xo * 2);
@@ -364,8 +376,8 @@ static void ui_draw_vision_speedlimit(UIState *s) {
 
   int viz_speedlim_w = 180;
   int viz_speedlim_h = 202;
-  int viz_speedlim_x = (s->video_rect.x + (bdr_is*2));
-  int viz_speedlim_y = (s->video_rect.y + (bdr_is*1.5));
+  int viz_speedlim_x = (s->scene.viz_rect.x + (bdr_is*2));
+  int viz_speedlim_y = (s->scene.viz_rect.y + (bdr_is*1.5));
   if (!is_speedlim_valid) {
     viz_speedlim_w -= 5;
     viz_speedlim_h -= 10;
@@ -469,10 +481,10 @@ static void ui_draw_vision_event(UIState *s) {
   } else if (s->scene.controls_state.getDecelForModel() && s->scene.controls_state.getEnabled()) {
     // draw winding road sign
     const int img_turn_size = 160*1.5*0.82;
-    ui_draw_image(s->vg, viz_event_x - (img_turn_size / 4), viz_event_y + bdr_is - 25, img_turn_size, img_turn_size, s->img_turn, 1.0f);
+    ui_draw_image(s->vg, viz_event_x - (img_turn_size / 4) + 80, viz_event_y + bdr_is - 45, img_turn_size, img_turn_size, s->img_turn, 1.0f);
   } else if (s->scene.controls_state.getEngageable()) {
     // draw steering wheel
-    const int bg_wheel_size = 96;
+    const int bg_wheel_size = 90;
     const int bg_wheel_x = viz_event_x + (viz_event_w-bg_wheel_size);
     const int bg_wheel_y = viz_event_y + (bg_wheel_size/2);
     const NVGcolor color = bg_colors[s->status];
@@ -482,17 +494,17 @@ static void ui_draw_vision_event(UIState *s) {
 }
 
 static void ui_draw_vision_map(UIState *s) {
-  const int map_size = 96;
+  const int map_size = 90;
   const int map_x = (s->video_rect.x + (map_size * 3) + (bdr_s * 3));
   const int map_y = (s->scene.viz_rect.bottom() + ((footer_h - map_size) / 2));
   ui_draw_circle_image(s->vg, map_x, map_y, map_size, s->img_map, s->scene.map_valid);
 }
 
 static void ui_draw_vision_face(UIState *s) {
-  const int face_size = 96;
+  const int face_size = 90;
   const int face_x = (s->scene.viz_rect.x + face_size + (bdr_is * 2));
   const int face_y = (s->scene.viz_rect.bottom() - footer_h + ((footer_h - face_size) / 2));
-  ui_draw_circle_image(s->vg, face_x, face_y, face_size, s->img_face, s->scene.dmonitoring_state.getFaceDetected());
+  ui_draw_circle_image(s->vg, face_x, face_y+border_shifter+25, face_size, s->img_face, s->scene.dmonitoring_state.getFaceDetected());
 }
 
 static void ui_draw_driver_view(UIState *s) {
@@ -545,7 +557,7 @@ static void ui_draw_driver_view(UIState *s) {
   const int face_size = 85;
   const int x = (valid_frame_x + face_size + (bdr_s * 2)) + (scene->is_rhd ? valid_frame_w - box_h / 2:0);
   const int y = (box_y + box_h - face_size - bdr_s - (bdr_s * 1.5));
-  ui_draw_circle_image(s->vg, x, y, face_size, s->img_face, scene->dmonitoring_state.getFaceDetected());
+  ui_draw_circle_image(s->vg, x, y+border_shifter+25, face_size-5, s->img_face, scene->dmonitoring_state.getFaceDetected());
 }
 
 static void ui_draw_vision_header(UIState *s) {

@@ -95,6 +95,7 @@ class opParams:
                         'keep_openpilot_engaged': Param(True, bool, 'True is stock behavior in this fork. False lets you use the brake and cruise control stalk to disengage as usual'),
                         #'lat_d': Param(9.0, VT.number, 'The lateral derivative gain, default is 9.0 for TSS2 Corolla. This is active at all speeds', live=True),
                         'limit_rsa': Param(False, bool, "Switch off RSA above rsa_max_speed"),
+                        'interbridged': Param(False, bool, "ONLY USE IT FOR TESTING PURPOSE. You are responsible for your own action. we do not recommend using it if you don't know what youre doing"),
                         #'ludicrous_mode': Param(False, bool, 'Double overall acceleration!'),
                         'mpc_offset': Param(0.0, VT.number, 'Offset model braking by how many m/s. Lower numbers equals more model braking', live=True),
                         #'NoctuaMode': Param(False, bool, 'Noctua Fan are super quite and they run at full speed at all time.'),
@@ -122,13 +123,13 @@ class opParams:
                                                               'auto will reboot the device when an update is seen'),
                         'enable_indi_live': Param(False, bool, live=True),
                         'indi_inner_gain_bp': Param([18, 22, 26], [list, float, int], live=True, depends_on='enable_indi_live'),
-                        'indi_inner_gain_v': Param([5, 10, 15], [list, float, int], live=True, depends_on='enable_indi_live'),
+                        'indi_inner_gain_v': Param([9, 12, 15], [list, float, int], live=True, depends_on='enable_indi_live'),
                         'indi_outer_gain_bp': Param([18, 22, 26], [list, float, int], live=True, depends_on='enable_indi_live'),
-                        'indi_outer_gain_v': Param([4, 9, 14.99], [list, float, int], live=True, depends_on='enable_indi_live'),
+                        'indi_outer_gain_v': Param([8, 11, 14.99], [list, float, int], live=True, depends_on='enable_indi_live'),
                         'indi_time_constant_bp': Param([18, 22, 26], [list, float, int], live=True, depends_on='enable_indi_live'),
-                        'indi_time_constant_v': Param([2, 4, 5.5], [list, float, int], live=True, depends_on='enable_indi_live'),
+                        'indi_time_constant_v': Param([1, 3, 4.5], [list, float, int], live=True, depends_on='enable_indi_live'),
                         'indi_actuator_effectiveness_bp': Param([18, 22, 26], [list, float, int], live=True, depends_on='enable_indi_live'),
-                        'indi_actuator_effectiveness_v': Param([5, 10, 15], [list, float, int], live=True, depends_on='enable_indi_live'),
+                        'indi_actuator_effectiveness_v': Param([9, 12, 15], [list, float, int], live=True, depends_on='enable_indi_live'),
                         'steer_limit_timer': Param(0.4, VT.number, live=True, depends_on='enable_indi_live')
                        }
 

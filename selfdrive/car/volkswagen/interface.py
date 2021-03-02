@@ -35,6 +35,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint, has_relay)
 
     ret.communityFeature = True
+    ret.lateralTuning.pid.kdBP, ret.lateralTuning.pid.kdV = [[0.], [0.]]
 
     # Set global default parameters
     ret.radarOffCan = True
@@ -42,13 +43,15 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 1.0
     ret.steerActuatorDelay = 0.05  # Hopefully all racks are similar here
     ret.steerLimitTimer = 0.4
-
+    
+    ret.lateralTuning.init('pid')
     # Override these per-car as necessary
     ret.lateralTuning.pid.kpBP = [0.]
     ret.lateralTuning.pid.kiBP = [0.]
     ret.lateralTuning.pid.kpV = [0.6]
     ret.lateralTuning.pid.kiV = [0.2]
     ret.lateralTuning.pid.kfV = [0.00006]
+    ret.lateralTuning.pid.newKfTuned = False
 
     # PER-PLATFORM PARAMETERS - DO NOT EDIT HERE TO TUNE INDIVIDUAL VEHICLES
     ret.carName = "volkswagen"

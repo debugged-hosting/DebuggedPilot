@@ -180,6 +180,7 @@ class CarState(CarStateBase):
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
     self.cruise_mode = 0
+    self.pcm_acc_active = False
 
     #dp
     self.lkMode = True
@@ -322,9 +323,16 @@ class CarState(CarStateBase):
       self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
 
     ret.brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
-    ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS'] != 0
     ret.cruiseState.available = bool(main_on)
     ret.cruiseState.nonAdaptive = self.cruise_mode != 0
+    if not self.pcm_acc_active and cp.vl["POWERTRAIN_DATA"]['ACC_STATUS'] != 0:
+      self.pcm_acc_active = True
+    if not ret.cruiseState.available:
+      self.pcm_acc_active = False
+    if self.pcm_acc_active:
+      ret.cruiseState.enabled = ret.cruiseState.available
+    else:
+      ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS'] != 0
 
     # afa feature
     self.hud_lead = cp.vl["ACC_HUD"]['HUD_LEAD']

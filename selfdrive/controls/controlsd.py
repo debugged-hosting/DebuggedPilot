@@ -21,6 +21,9 @@ from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.planner import LON_MPC_STEP
 from selfdrive.locationd.calibrationd import Calibration
+#from common.travis_checker import travis
+#import threading
+from selfdrive.interceptor import Interceptor
 
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
@@ -59,9 +62,11 @@ class Controls:
     self.sm = sm
     if self.sm is None:
       socks = ['thermal', 'health', 'model', 'liveCalibration', 'radarState', 'frontFrame',
-                                     'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman', 'dragonConf']
+                                     'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman', 'dragonConf', 'testJoystick']
       ignore_alive = ['dragonConf'] if params.get('dp_driver_monitor') == b'1' else ['dMonitoringState', 'dragonConf']
       self.sm = messaging.SubMaster(socks, ignore_alive=ignore_alive)
+
+    self.interceptor = Interceptor()
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -234,18 +239,18 @@ class Controls:
     if not self.sm.alive['plan'] and self.sm.alive['pathPlan']:
       # only plan not being received: radar not communicating
       self.events.add(EventName.radarCommIssue)
-    elif not self.sm.all_alive_and_valid():
+    elif not self.sm.all_alive_and_valid() and self.sm.frame > 5 / DT_CTRL:
       self.sm.print_dead_and_not_valid()
       self.events.add(EventName.commIssue)
-    if not self.sm['pathPlan'].mpcSolutionValid:
+    if not self.sm['pathPlan'].mpcSolutionValid and self.sm.frame > 5 / DT_CTRL:
       self.events.add(EventName.steerTempUnavailable if self.sm['dragonConf'].dpAtl else EventName.plannerError)
-    # if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
-    #   if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
-    #     self.events.add(EventName.sensorDataInvalid)
-    # if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000):
-    #   # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
-    #   if not (SIMULATION or NOSENSOR):  # TODO: send GPS in carla
-    #     self.events.add(EventName.noGps)
+    if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
+      if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
+        self.events.add(EventName.sensorDataInvalid)
+    if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000):
+      # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
+      if not (SIMULATION or NOSENSOR):  # TODO: send GPS in carla
+        self.events.add(EventName.noGps)
     if not self.sm['pathPlan'].paramsValid:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['liveLocationKalman'].posenetOK:
@@ -314,6 +319,9 @@ class Controls:
     CS = self.CI.update(self.CC, can_strs, self.sm['dragonConf'])
 
     self.sm.update(0)
+
+    # Update Interceptor
+    self.interceptor.update(self.sm['testJoystick'], self.sm.logMonoTime['testJoystick'], sec_since_boot()*1e9)
 
     # Check for CAN timeout
     if not can_strs:
@@ -462,6 +470,12 @@ class Controls:
         if left_deviation or right_deviation:
           self.events.add(EventName.steerSaturated)
 
+    # Interceptor; (signal, index, part, scale=1.0)
+    actuators.gas = self.interceptor.override_axis(actuators.gas, 1, 'negative', .5)  # Rescale for Toyota to maxgas=0.5
+    actuators.brake = self.interceptor.override_axis(actuators.brake, 1, 'positive', 1.)
+    actuators.steer = self.interceptor.override_axis(actuators.steer, 2, 'full', -1.)  # For torque based steering
+    actuators.steerAngle = self.interceptor.override_axis(actuators.steer, 2, 'full', -45.)  # For angle based steering, limit 45 deg
+
     return actuators, v_acc_sol, a_acc_sol, lac_log
 
   def publish_logs(self, CS, start_time, actuators, v_acc, a_acc, lac_log):
@@ -547,6 +561,7 @@ class Controls:
     controlsState.vEgoRaw = CS.vEgoRaw
     controlsState.angleSteers = CS.steeringAngle
     controlsState.curvature = self.VM.calc_curvature(steer_angle_rad, CS.vEgo)
+    controlsState.decelForTurn = self.sm['plan'].decelForTurn
     controlsState.steerOverride = CS.steeringPressed
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)

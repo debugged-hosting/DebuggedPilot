@@ -33,6 +33,7 @@ class CarState(CarStateBase):
     self.smartspeed = 0
     self.spdval1 = 0
     self.distance = 0
+    self.engineRPM = 0
     #self.read_distance_lines = 0
     if not travis:
       self.pm = messaging.PubMaster(['liveTrafficData'])
@@ -40,7 +41,7 @@ class CarState(CarStateBase):
     # On NO_DSU cars but not TSS2 cars the cp.vl["STEER_TORQUE_SENSOR"]['STEER_ANGLE']
     # is zeroed to where the steering angle is at start.
     # Need to apply an offset as soon as the steering angle measurements are both received
-    self.needs_angle_offset = CP.carFingerprint not in TSS2_CAR or CP.carFingerprint in [CAR.LEXUS_ISH] or self.dp_toyota_zss
+    self.needs_angle_offset = True #CP.carFingerprint not in TSS2_CAR or CP.carFingerprint in [CAR.LEXUS_ISH] or self.dp_toyota_zss
     self.angle_offset = 0.
 
   def update(self, cp, cp_cam):
@@ -103,6 +104,7 @@ class CarState(CarStateBase):
 
     ret.leftBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     ret.rightBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
+    self.engineRPM = cp.vl["ENGINE_RPM"]['RPM']
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
@@ -212,6 +214,7 @@ class CarState(CarStateBase):
       ("GEAR", "GEAR_PACKET", 0),
       ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
       ("GAS_PEDAL", "GAS_PEDAL", 0),
+      ("RPM", "ENGINE_RPM", 0),
       ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
       ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
       ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
