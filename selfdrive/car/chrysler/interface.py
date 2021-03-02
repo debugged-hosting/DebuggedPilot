@@ -41,16 +41,16 @@ class CarInterface(CarInterfaceBase):
     # steerActuatorDelay is how far its looking ahead.
     # steerRateCost is how eager the steering is to make sudden changes.
 
-    ret.lateralTuning.init('indi')
-    ret.lateralTuning.indi.innerLoopGainBP = [0, 20]
-    ret.lateralTuning.indi.innerLoopGainV = [4.0, 10.5]
-    ret.lateralTuning.indi.outerLoopGainBP = [0, 20]
-    ret.lateralTuning.indi.outerLoopGainV = [7.0, 11.5]
-    ret.lateralTuning.indi.timeConstantBP = [0, 20]
-    ret.lateralTuning.indi.timeConstantV = [0.5, 1.8]
-    ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 20]
-    ret.lateralTuning.indi.actuatorEffectivenessV = [70.0, 75.0]
-    ret.steerActuatorDelay = 0.8
+    #ret.lateralTuning.init('indi')
+    #ret.lateralTuning.indi.innerLoopGainBP = [0, 20]
+    #ret.lateralTuning.indi.innerLoopGainV = [4.0, 10.5]
+    #ret.lateralTuning.indi.outerLoopGainBP = [0, 20]
+    #ret.lateralTuning.indi.outerLoopGainV = [7.0, 11.5]
+    #ret.lateralTuning.indi.timeConstantBP = [0, 20]
+    #ret.lateralTuning.indi.timeConstantV = [0.5, 1.8]
+    #ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 20]
+    #ret.lateralTuning.indi.actuatorEffectivenessV = [70.0, 75.0]
+    #ret.steerActuatorDelay = 0.8
 
     ### OLD PID TUNE - WORKED ON 0.7.7 ###
 
