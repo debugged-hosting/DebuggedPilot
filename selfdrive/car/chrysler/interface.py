@@ -29,7 +29,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 16.2  # Pacifica Hybrid 2017
     ret.mass = 1964. + STD_CARGO_KG  # kg curb weight Pacifica 2017
     ret.steerLimitTimer = 0.4
-    ret.steerRateCost = 0.10 #0.7 works well
+    ret.steerRateCost = 0.9 #0.7 works well
     ret.minSteerSpeed = 0 # TF DEVICE
 
     ### INDI TUNE ###
