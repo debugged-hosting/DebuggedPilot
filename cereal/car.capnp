@@ -133,6 +133,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     #arnepilot
     longControlDisabled @102;
     waitingMode @103;
+    reverseGearArne @104;
   }
 }
 
@@ -204,6 +205,11 @@ struct CarState {
   lkMode @37 :Bool;
   stopSteering @38 :Bool; # timebomb - stopSteering
   engineRPM @39 :Float32;
+  rightBlindspotD1 @40 :Float32;
+  rightBlindspotD2 @41 :Float32;
+  leftBlindspotD1 @42 :Float32;
+  leftBlindspotD2 @43 :Float32;
+  blindspotside @44 :Float32;
 
   struct WheelSpeeds {
     # optional wheel speeds

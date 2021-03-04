@@ -18,7 +18,7 @@ from common.op_params import opParams
 op_params = opParams()
 rsa_max_speed = op_params.get('rsa_max_speed')
 limit_rsa = op_params.get('limit_rsa')
-
+set_speed_offset = op_params.get('set_speed_offset')
 # dp
 #DP_OFF = 0
 DP_ECO = 1
@@ -41,18 +41,27 @@ class CarState(CarStateBase):
     self.main_on = False
     self.gas_pressed = False
     self.smartspeed = 0
+    self.leftblindspot = False
+    self.leftblindspotD1 = 0
+    self.leftblindspotD2 = 0
+    self.rightblindspot = False
+    self.rightblindspotD1 = 0
+    self.rightblindspotD2 = 0
+    self.rightblindspotcounter = 0
+    self.leftblindspotcounter = 0
     self.Angles = np.zeros(250)
     self.Angles_later = np.zeros(250)
     self.Angle_counter = 0
     self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
+    self.v_cruise_pcmactivated = False
     self.v_cruise_pcmlast = 0.0
     self.setspeedoffset = 34.0
     self.setspeedcounter = 0
     self.spdval1 = 0
     self.distance = 0
     self.engineRPM = 0
-    #self.read_distance_lines = 0
+    self.read_distance_lines = 0
     if not travis:
       self.pm = messaging.PubMaster(['liveTrafficData'])
       self.sm = messaging.SubMaster(['liveMapData','dragonConf'])#',latControl',])
@@ -62,7 +71,7 @@ class CarState(CarStateBase):
     self.needs_angle_offset = True #CP.carFingerprint not in TSS2_CAR or CP.carFingerprint in [CAR.LEXUS_ISH] or self.dp_toyota_zss
     self.angle_offset = 0.
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam, frame):
     ret = car.CarState.new_message()
 
     ret.doorOpen = any([cp.vl["SEATS_DOORS"]['DOOR_OPEN_FL'], cp.vl["SEATS_DOORS"]['DOOR_OPEN_FR'],
@@ -111,41 +120,88 @@ class CarState(CarStateBase):
     ret.steeringRate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
-    
+    dp_profile = 0
+
     if not travis:
       self.sm.update(0)
       self.smartspeed = self.sm['liveMapData'].speedLimit
-      
-    dp_profile = self.sm['dragonConf'].dpAccelProfile
-    
-    econ_on = 0
-    sport_on = 0
+      dp_profile = self.sm['dragonConf'].dpAccelProfile
+
     if self.CP.carFingerprint in [CAR.COROLLAH_TSS2, CAR.LEXUS_ESH_TSS2, CAR.RAV4H_TSS2, CAR.CHRH, CAR.PRIUS_TSS2, CAR.HIGHLANDERH_TSS2]:
       sport_on = cp.vl["GEAR_PACKET2"]['SPORT_ON']
       econ_on = cp.vl["GEAR_PACKET2"]['ECON_ON']
     else:
-      econ_on = cp.vl["GEAR_PACKET"]['ECON_ON']
+      try:
+        econ_on = cp.vl["GEAR_PACKET"]['ECON_ON']
+      except KeyError:
+        econ_on = 0
       if self.CP.carFingerprint == CAR.RAV4_TSS2:
         sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON_2']
       else:
-        sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON']      
-    if econ_on == 1 and dp_profile !=  DP_ECO:
-      if int(Params().get('dp_accel_profile')) != DP_ECO:
-        put_nonblocking('dp_accel_profile',str(DP_ECO))
-        put_nonblocking('dp_last_modified',str(floor(time.time())))
-    if sport_on == 1 and dp_profile !=  DP_SPORT:
-      if int(Params().get('dp_accel_profile')) != DP_SPORT:
-        put_nonblocking('dp_accel_profile',str(DP_SPORT))
-        put_nonblocking('dp_last_modified',str(floor(time.time())))
-    if sport_on == 0 and econ_on == 0 and dp_profile !=  DP_NORMAL:
-      if int(Params().get('dp_accel_profile')) != DP_NORMAL:
-        put_nonblocking('dp_accel_profile',str(DP_NORMAL))
-        put_nonblocking('dp_last_modified',str(floor(time.time())))
-    #if self.read_distance_lines != cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']:
-      #self.read_distance_lines = cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']
-      #Params().put('dp_dynamic_follow', str(int(max(self.read_distance_lines - 1, 0))))
+        try:
+          sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON']
+        except KeyError:
+          sport_on = 0
+    if not travis:
+      if econ_on == 1 and dp_profile !=  DP_ECO:
+        if int(Params().get('dp_accel_profile')) != DP_ECO:
+          put_nonblocking('dp_accel_profile',str(DP_ECO))
+          put_nonblocking('dp_last_modified',str(floor(time.time())))
+      if sport_on == 1 and dp_profile !=  DP_SPORT:
+        if int(Params().get('dp_accel_profile')) != DP_SPORT:
+          put_nonblocking('dp_accel_profile',str(DP_SPORT))
+          put_nonblocking('dp_last_modified',str(floor(time.time())))
+      if sport_on == 0 and econ_on == 0 and dp_profile !=  DP_NORMAL:
+        if int(Params().get('dp_accel_profile')) != DP_NORMAL:
+          put_nonblocking('dp_accel_profile',str(DP_NORMAL))
+          put_nonblocking('dp_last_modified',str(floor(time.time())))
+    #Arne Blindspot code.
+    if frame > 999 and self.CP.carFingerprint == CAR.RAV4H:#not (self.CP.carFingerprint in TSS2_CAR or self.CP.carFingerprint == CAR.CAMRY or self.CP.carFingerprint == CAR.CAMRYH):
+      if cp.vl["DEBUG"]['BLINDSPOTSIDE']==65: #Left
+        if cp.vl["DEBUG"]['BLINDSPOTD1'] != self.leftblindspotD1:
+          self.leftblindspotD1 = cp.vl["DEBUG"]['BLINDSPOTD1']
+          self.leftblindspotcounter = 21
+        if cp.vl["DEBUG"]['BLINDSPOTD2'] != self.leftblindspotD2:
+          self.leftblindspotD2 = cp.vl["DEBUG"]['BLINDSPOTD2']
+          self.leftblindspotcounter = 21
+        if (self.leftblindspotD1 > 10) or (self.leftblindspotD2 > 10):
+          self.leftblindspot = bool(1)
+          print("Left Blindspot Detected")
+      elif  cp.vl["DEBUG"]['BLINDSPOTSIDE']==66: #Right
+        if cp.vl["DEBUG"]['BLINDSPOTD1'] != self.rightblindspotD1:
+          self.rightblindspotD1 = cp.vl["DEBUG"]['BLINDSPOTD1']
+          self.rightblindspotcounter = 21
+        if cp.vl["DEBUG"]['BLINDSPOTD2'] != self.rightblindspotD2:
+          self.rightblindspotD2 = cp.vl["DEBUG"]['BLINDSPOTD2']
+          self.rightblindspotcounter = 21
+        if (self.rightblindspotD1 > 10) or (self.rightblindspotD2 > 10):
+          self.rightblindspot = bool(1)
+          print("Right Blindspot Detected")
+      self.rightblindspotcounter = self.rightblindspotcounter -1 if self.rightblindspotcounter > 0 else 0
+      self.leftblindspotcounter = self.leftblindspotcounter -1 if self.leftblindspotcounter > 0 else 0
+      if self.leftblindspotcounter == 0:
+        self.leftblindspot = False
+        self.leftblindspotD1 = 0
+        self.leftblindspotD2 = 0
+      if self.rightblindspotcounter == 0:
+        self.rightblindspot = False
+        self.rightblindspotD1 = 0
+        self.rightblindspotD2 = 0
+    elif frame > 999 and self.CP.carFingerprint in TSS2_CAR or self.CP.carFingerprint == CAR.AVALON_2021:
+      self.leftblindspot = cp.vl["BSM"]['L_ADJACENT'] == 1
+      self.leftblindspotD1 = 10.1
+      self.leftblindspotD2 = 10.1
+      self.rightblindspot = cp.vl["BSM"]['R_ADJACENT'] == 1
+      self.rightblindspotD1 = 10.1
+      self.rightblindspotD2 = 10.1
+    #Arne Distance button read and write code.
+    if self.read_distance_lines != cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']:
+      self.read_distance_lines = cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']
+      put_nonblocking('dp_dynamic_follow', str(int(max(self.read_distance_lines, 0))))
+      put_nonblocking('dp_last_modified',str(floor(time.time())))
 
-
+    ret.leftBlindspot = self.leftblindspot
+    ret.rightBlindspot = self.rightblindspot
 
     ret.leftBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
     ret.rightBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
@@ -170,7 +226,7 @@ class CarState(CarStateBase):
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]['SET_SPEED'] * CV.KPH_TO_MS
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
       ret.cruiseState.available = self.main_on
-    
+
     if self.CP.carFingerprint in TSS2_CAR:
       minimum_set_speed = 27.0
     elif self.CP.carFingerprint == CAR.RAV4:
@@ -180,41 +236,64 @@ class CarState(CarStateBase):
     maximum_set_speed = 169.0
     if self.CP.carFingerprint == CAR.LEXUS_RXH:
       maximum_set_speed = 177.0
-    v_cruise_pcm_max = ret.cruiseState.speed
+    v_cruise_pcm_max = round(ret.cruiseState.speed * CV.MS_TO_KPH)
+    #print("v_cruise_pcm_max = " + str(v_cruise_pcm_max))
     if v_cruise_pcm_max < minimum_set_speed:
       minimum_set_speed = v_cruise_pcm_max
     if v_cruise_pcm_max > maximum_set_speed:
       maximum_set_speed = v_cruise_pcm_max
-    speed_range = maximum_set_speed-minimum_set_speed
-    if bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE']) and not self.pcm_acc_active and self.v_cruise_pcmlast != ret.cruiseState.speed:
-      if ret.vEgo < minimum_set_speed/3.6:
-        self.setspeedoffset = max(min(int(minimum_set_speed-ret.vEgo*3.6),(minimum_set_speed-7.0)),0.0)
-        self.v_cruise_pcmlast = ret.cruiseState.speed
-    if ret.cruiseState.speed < self.v_cruise_pcmlast:
-      if self.setspeedcounter > 0 and ret.cruiseState.speed > minimum_set_speed:
-        self.setspeedoffset = self.setspeedoffset + 4
+    speed_range = maximum_set_speed - minimum_set_speed
+    #print("self.pcm_acc_active = " + str(self.pcm_acc_active))
+    #print("PCM_CRUISE CRUISE_ACTIVE " + str(bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])))
+    if self.v_cruise_pcmactivated and self.v_cruise_pcmlast != round(ret.cruiseState.speed * CV.MS_TO_KPH):
+      #print("Engage with different speed than before")
+      if ret.vEgo * CV.MS_TO_KPH < minimum_set_speed:
+        #print("speed lower than min_set_speed")
+        self.setspeedoffset = max(min(int(minimum_set_speed - ret.vEgo * CV.MS_TO_KPH),(minimum_set_speed-7.0)),0.0)
+        self.v_cruise_pcmlast = round(ret.cruiseState.speed * CV.MS_TO_KPH)
       else:
-        if math.floor((int((-ret.cruiseState.speed)*(minimum_set_speed-7.0)/speed_range  + maximum_set_speed*(minimum_set_speed-7.0)/speed_range)-self.setspeedoffset)/(ret.cruiseState.speed-(minimum_set_speed-1.0))) > 0:
-          self.setspeedoffset = self.setspeedoffset + math.floor((int((-ret.cruiseState.speed)*(minimum_set_speed-7.0)/speed_range
-                                                                      + maximum_set_speed*(minimum_set_speed-7.0)/speed_range)-self.setspeedoffset)/(ret.cruiseState.speed-(minimum_set_speed-1.0)))
+        #print("speed is higher than min_set_speed")
+        self.setspeedoffset = 0.0
+        self.v_cruise_pcmlast = round(ret.cruiseState.speed * CV.MS_TO_KPH)
+    if round(ret.cruiseState.speed * CV.MS_TO_KPH) < self.v_cruise_pcmlast:
+      #print("Speed lowered")
+      if self.setspeedcounter > 0 and round(ret.cruiseState.speed * CV.MS_TO_KPH) > minimum_set_speed:
+        self.setspeedoffset = self.setspeedoffset + 4
+        #print("Speed lowered by 5")
+      else:
+        if math.floor((int(round(-ret.cruiseState.speed * CV.MS_TO_KPH)*(minimum_set_speed-7.0)/speed_range 
+                           + maximum_set_speed * (minimum_set_speed - 7.0)/speed_range)
+                       - self.setspeedoffset)/(round(ret.cruiseState.speed * CV.MS_TO_KPH) - (minimum_set_speed-1.0))) > 0:
+          self.setspeedoffset = self.setspeedoffset + math.floor((int(round(-ret.cruiseState.speed * CV.MS_TO_KPH)*(minimum_set_speed - 7.0)/speed_range
+                                                                      + maximum_set_speed * (minimum_set_speed - 7.0)/speed_range) 
+                                                                  - self.setspeedoffset)/(round(ret.cruiseState.speed * CV.MS_TO_KPH) - (minimum_set_speed - 1.0)))
+          #print("Speed lowered, self.setspeedoffset is now " + str(self.setspeedoffset))
       self.setspeedcounter = 50
-    if self.v_cruise_pcmlast < ret.cruiseState.speed:
+    if self.v_cruise_pcmlast < round(ret.cruiseState.speed * CV.MS_TO_KPH):
+      #print("Speed raised")
       if self.setspeedcounter > 0 and (self.setspeedoffset - 4) > 0:
+        #print("Speed raised by 5")
         self.setspeedoffset = self.setspeedoffset - 4
       else:
-        self.setspeedoffset = self.setspeedoffset + math.floor((int((-ret.cruiseState.speed)*(minimum_set_speed-7.0)/speed_range
-                                                                    + maximum_set_speed*(minimum_set_speed-7.0)/speed_range)-self.setspeedoffset)/(maximum_set_speed+1.0-ret.cruiseState.speed))
+        self.setspeedoffset = self.setspeedoffset + math.floor((int(round(-ret.cruiseState.speed * CV.MS_TO_KPH) * (minimum_set_speed - 7.0)/speed_range
+                                                                    + maximum_set_speed * (minimum_set_speed - 7.0)/speed_range) 
+                                                                - self.setspeedoffset)/(maximum_set_speed + 1.0 - round(ret.cruiseState.speed * CV.MS_TO_KPH)))
+        #print("Speed raised, self.setspeedoffset is now " + str(self.setspeedoffset))
       self.setspeedcounter = 50
     if self.setspeedcounter > 0:
       self.setspeedcounter = self.setspeedcounter - 1
-    self.v_cruise_pcmlast = ret.cruiseState.speed
-    if int(ret.cruiseState.speed) - self.setspeedoffset < 7:
-      self.setspeedoffset = int(ret.cruiseState.speed) - 7
-    if int(ret.cruiseState.speed) - self.setspeedoffset > maximum_set_speed:
-      self.setspeedoffset = int(ret.cruiseState.speed) - maximum_set_speed
+    self.v_cruise_pcmlast = round(ret.cruiseState.speed * CV.MS_TO_KPH)
+    if round(ret.cruiseState.speed * CV.MS_TO_KPH) - self.setspeedoffset < 7.0:
+      self.setspeedoffset = round(ret.cruiseState.speed * CV.MS_TO_KPH) - 7.0
+    if round(ret.cruiseState.speed * CV.MS_TO_KPH) - self.setspeedoffset > maximum_set_speed:
+      self.setspeedoffset = round(ret.cruiseState.speed * CV.MS_TO_KPH) - maximum_set_speed
 
-
-    ret.cruiseState.speed = min(max(7, int(ret.cruiseState.speed) - self.setspeedoffset),v_cruise_pcm_max)
+    if set_speed_offset or travis:
+      self.setspeedoffset = 0.0
+    #print("self.setspeedoffset = " + str (self.setspeedoffset))
+    #print("ret.cruiseState.speed before = " + str (ret.cruiseState.speed))
+    ret.cruiseState.speed = min(max(7.0, round(ret.cruiseState.speed * CV.MS_TO_KPH) - self.setspeedoffset),v_cruise_pcm_max) * CV.KPH_TO_MS
+    #print("ret.cruiseState.speed after = " + str(ret.cruiseState.speed) + " m/s or " +  str(round(ret.cruiseState.speed * CV.MS_TO_KPH)) + " kph")
     #if not travis and self.arne_sm.updated['latControl'] and ret.vEgo > 11:
     #  angle_later = self.arne_sm['latControl'].anglelater
     #else:
@@ -228,14 +307,15 @@ class CarState(CarStateBase):
       #  self.Angles_later[self.Angle_counter] = abs(angle_later) * 0.8
       #else:
       #  self.Angles_later[self.Angle_counter] = 0.0
-    
+
     if dp_profile == DP_ECO:
       factor = 1.0
     elif dp_profile == DP_SPORT:
       factor = 1.6
     else:
       factor = 1.3
-    ret.cruiseState.speed = int(min(ret.cruiseState.speed, factor * interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
+    if not travis:
+      ret.cruiseState.speed = int(min(ret.cruiseState.speed * CV.MS_TO_KPH, factor * interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))* CV.KPH_TO_MS
     self.Angle_counter = (self.Angle_counter + 1 ) % 250
     if self.CP.carFingerprint in [CAR.LEXUS_ISH, CAR.LEXUS_GSH]:
       # Lexus ISH does not have CRUISE_STATUS value (always 0), so we use CRUISE_ACTIVE value instead
@@ -248,8 +328,12 @@ class CarState(CarStateBase):
       ret.cruiseState.standstill = False
     else:
       ret.cruiseState.standstill = self.pcm_acc_status == 7
+    if bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE']) and not self.pcm_acc_active:
+      self.v_cruise_pcmactivated = True
+    else:
+      self.v_cruise_pcmactivated = False
     self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
-    ret.cruiseState.enabled = self.pcm_acc_active
+    ret.cruiseState.enabled = self.pcm_acc_active and ret.cruiseState.speed > 0.0
 
     if self.CP.carFingerprint == CAR.PRIUS:
       ret.genericToggle = cp.vl["AUTOPARK_STATUS"]['STATE'] != 0
@@ -262,7 +346,8 @@ class CarState(CarStateBase):
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
 
     self.distance = cp_cam.vl["ACC_CONTROL"]['DISTANCE']
-
+    if self.CP.carFingerprint == CAR.RAV4H:
+      self.distance = cp.vl["SDSU"]['FD_BUTTON']
     if self.CP.carFingerprint in TSS2_CAR:
       ret.leftBlindspot = (cp.vl["BSM"]['L_ADJACENT'] == 1) or (cp.vl["BSM"]['L_APPROACHING'] == 1)
       ret.rightBlindspot = (cp.vl["BSM"]['R_ADJACENT'] == 1) or (cp.vl["BSM"]['R_APPROACHING'] == 1)
@@ -365,11 +450,11 @@ class CarState(CarStateBase):
     ]
     if CP.carFingerprint == CAR.RAV4_TSS2:
       signals.append(("SPORT_ON_2", "GEAR_PACKET", 0))
-      
+
     if CP.carFingerprint in [CAR.COROLLAH_TSS2, CAR.LEXUS_ESH_TSS2, CAR.RAV4H_TSS2, CAR.CHRH, CAR.PRIUS_TSS2, CAR.HIGHLANDERH_TSS2]:
       signals.append(("SPORT_ON", "GEAR_PACKET2", 0))
       signals.append(("ECON_ON", "GEAR_PACKET2", 0))
-      
+
     if CP.carFingerprint in [CAR.LEXUS_ISH, CAR.LEXUS_GSH]:
       signals.append(("GAS_PEDAL", "GAS_PEDAL_ALT", 0))
       signals.append(("MAIN_ON", "PCM_CRUISE_ALT", 0))
@@ -401,7 +486,14 @@ class CarState(CarStateBase):
       checks.append(("PCM_CRUISE_2", 33))
 
     if CP.carFingerprint == CAR.PRIUS:
-      signals += [("STATE", "AUTOPARK_STATUS", 0)]
+      signals.append(("STATE", "AUTOPARK_STATUS", 0))
+
+    if CP.carFingerprint == CAR.RAV4H:
+      signals.append(("FD_BUTTON", "SDSU", 0))
+      signals.append(("BLINDSPOT","DEBUG", 0))
+      signals.append(("BLINDSPOTSIDE","DEBUG",65))
+      signals.append(("BLINDSPOTD1","DEBUG", 0))
+      signals.append(("BLINDSPOTD2","DEBUG", 0))
 
     # add gas interceptor reading if we are using it
     if CP.enableGasInterceptor:
@@ -409,7 +501,7 @@ class CarState(CarStateBase):
       signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
       checks.append(("GAS_SENSOR", 50))
 
-    if CP.carFingerprint in TSS2_CAR:
+    if CP.carFingerprint in TSS2_CAR  or CP.carFingerprint == CAR.AVALON_2021:
       signals += [("L_ADJACENT", "BSM", 0)]
       signals += [("L_APPROACHING", "BSM", 0)]
       signals += [("R_ADJACENT", "BSM", 0)]

@@ -69,7 +69,7 @@ _DP_CRUISE_MAX_V_FOLLOWING = [1.6, 1.4, 1.4, .7, .3]
 _DP_CRUISE_MAX_BP = [0., 5., 10., 20., 55.]
 
 # Lookup table for turns
-_DP_TOTAL_MAX_V = [3.3, 3.0, 3.9]
+_DP_TOTAL_MAX_V = [3.5, 4.0, 5.0]
 _DP_TOTAL_MAX_BP = [0., 25., 55.]
 
 def dp_calc_cruise_accel_limits(v_ego, following, dp_profile):
@@ -104,11 +104,20 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   this should avoid accelerating when losing the target in turns
   """
 
-  a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
-  a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
-  a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
+  #a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
+  #a_y = v_ego**2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
+  #a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
 
-  return [a_target[0], min(a_target[1], a_x_allowed)]
+  #return [a_target[0], min(a_target[1], a_x_allowed)]
+  a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
+  a_y = v_ego**2 * abs(angle_steers) * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
+  #a_y2 = v_ego**2 * abs(angle_later) * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
+  a_x_allowed = a_total_max - a_y
+  #a_x_allowed2 = a_total_max - a_y2
+  a_target[1] = min(a_target[1], a_x_allowed)#, a_x_allowed2)
+  a_target[0] = min(a_target[0], a_target[1])
+
+  return a_target
 
 
 class Planner():
