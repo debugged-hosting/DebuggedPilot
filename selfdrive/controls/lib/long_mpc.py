@@ -26,7 +26,7 @@ class LongitudinalMpc():
     self.prev_lead_status = False
     self.prev_lead_x = 0.0
     self.new_lead = False
-
+    self.sm = messaging.SubMaster(['dragonConf'])
     self.last_cloudlog_t = 0.0
 
   def send_mpc_solution(self, pm, qp_iterations, calculation_time):
@@ -61,7 +61,7 @@ class LongitudinalMpc():
 
   def update(self, pm, CS, lead):
     v_ego = CS.vEgo
-
+    self.sm.update(0)
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
 
@@ -98,7 +98,7 @@ class LongitudinalMpc():
     # Calculate mpc
     t = sec_since_boot()
     if not travis:
-      TR = self.dynamic_follow.update(CS, self.libmpc)  # update dynamic follow
+      TR = self.dynamic_follow.update(CS, self.libmpc, self.sm['dragonConf'].dpDynamicFollow)  # update dynamic follow
     else:
       TR = 1.8
     n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, TR)
