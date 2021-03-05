@@ -74,7 +74,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
       #ret.stoppingBrakeRate = 0.16 # reach stopping target smoothly
       #ret.startingBrakeRate = 0.9 # release brakes fast
-      #ret.startAccel = 1.3 # Accelerate from 0 faster
+      ret.startAccel = 1.4 # Accelerate from 0 faster
       stop_and_go = True
       ret.safetyParam = 55
       ret.wheelbase = 2.70002
@@ -82,11 +82,12 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
       ret.steerActuatorDelay = 0.5
-      ret.steerLimitTimer = 0.70
+      #ret.steerLimitTimer = 0.70
       if prius_pid:
+        ret.steerLimitTimer = 0.70
         ret.lateralTuning.init('pid')
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kfBP = [[0.], [0.], [0.]]
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.08], [0.02]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.07], [0.04]]
         ret.lateralTuning.pid.kdV = [0.0]
         ret.lateralTuning.pid.kfV = [0.00009531750004645412]
         ret.lateralTuning.pid.newKfTuned = True
@@ -457,10 +458,13 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def update(self, c, can_strings, dragonconf):
     # ******************* do can recv *******************
-    self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
-
-    ret = self.CS.update(self.cp, self.cp_cam)
+    if self.frame < 1000:
+      self.cp.update_strings(can_strings)
+      ret = self.CS.update(self.cp, self.cp_cam, self.frame)
+    else:
+      self.cp.update_strings(can_strings)
+      ret = self.CS.update(self.cp, self.cp_cam, self.frame)
     # dp
     self.dragonconf = dragonconf
     ret.cruiseState.enabled = common_interface_atl(ret, dragonconf.dpAtl)
@@ -484,12 +488,14 @@ class CarInterface(CarInterfaceBase):
 
     longControlDisabled = False
     if not self.CS.out.cruiseState.enabled:
+      self.waiting = False
       ret.cruiseState.enabled = self.CS.pcm_acc_active
     else:
       if self.keep_openpilot_engaged:
         ret.cruiseState.enabled = bool(self.CS.main_on)
       if not self.CS.pcm_acc_active:
         longControlDisabled = True
+        self.waiting = False
         ret.brakePressed = True
         self.disengage_due_to_slow_speed = False
     if ret.vEgo < 1 or not self.keep_openpilot_engaged:
@@ -508,6 +514,15 @@ class CarInterface(CarInterfaceBase):
 
     # if self.cp_cam.can_invalid_cnt >= 200 and self.CP.enableCamera and not self.CP.isPandaBlack:
     #   events.add(EventName.invalidGiraffeToyotaDEPRECATED)
+
+    if not self.waiting and ret.vEgo < 0.3 and not ret.gasPressed and self.CP.carFingerprint == CAR.RAV4H:
+      self.waiting = True
+    if self.waiting:
+      if ret.gasPressed:
+        self.waiting = False
+      else:
+        events.add(EventName.waitingMode)
+
     if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
       events.add(EventName.lowSpeedLockout)
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
