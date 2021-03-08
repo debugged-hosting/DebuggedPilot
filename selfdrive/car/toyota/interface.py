@@ -505,12 +505,15 @@ class CarInterface(CarInterfaceBase):
     if self.disengage_due_to_slow_speed and ret.vEgo > 1 and ret.gearShifter != GearShifter.reverse:
       self.disengage_due_to_slow_speed = False
       ret.cruiseState.enabled = bool(self.CS.main_on)
-
+    self.lkas = self.CS.lkas
     # events
     events = self.create_common_events(ret, extra_gears)
 
     if longControlDisabled:
       events.add(EventName.longControlDisabled)
+      
+    if self.lkas == 0:
+      events.add(EventName.latControlDisabled)
 
     # if self.cp_cam.can_invalid_cnt >= 200 and self.CP.enableCamera and not self.CP.isPandaBlack:
     #   events.add(EventName.invalidGiraffeToyotaDEPRECATED)
@@ -547,7 +550,7 @@ class CarInterface(CarInterfaceBase):
                                c.actuators, c.cruiseControl.cancel,
                                c.hudControl.visualAlert, c.hudControl.leftLaneVisible,
                                c.hudControl.rightLaneVisible, c.hudControl.leadVisible,
-                               c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart, self.dragonconf)
+                               c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart, self.dragonconf, self.lkas)
 
     self.frame += 1
     return can_sends

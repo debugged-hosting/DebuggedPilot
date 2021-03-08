@@ -2068,6 +2068,15 @@ struct Sentinel {
   type @0 :SentinelType;
 }
 
+struct TrafficModelRaw {
+  prediction @0 :List(Float32);
+}
+
+struct TrafficModelEvent {
+  status @0 :Text;
+  confidence @1 :Float32;
+}
+
 struct Event {
   # in nanoseconds?
   logMonoTime @0 :UInt64;
@@ -2151,7 +2160,9 @@ struct Event {
     frontEncodeIdx @76 :EncodeIndex; # driver facing camera
     wideEncodeIdx @77 :EncodeIndex;
     dragonConf @78 :DragonConf;
-    liveTrafficData @79:LiveTrafficData;
+    liveTrafficData @79 :LiveTrafficData;
+    trafficModelRaw @80 :TrafficModelRaw;
+    trafficModelEvent @81 :TrafficModelEvent;
   }
 }
 

@@ -19,6 +19,10 @@ op_params = opParams()
 rsa_max_speed = op_params.get('rsa_max_speed')
 limit_rsa = op_params.get('limit_rsa')
 set_speed_offset = op_params.get('set_speed_offset')
+physical_buttons_AP = op_params.get('physical_buttons_AP')
+physical_buttons_DF = op_params.get('physical_buttons_DF')
+physical_buttons_LKAS = op_params.get('physical_buttons_LKAS')
+
 # dp
 #DP_OFF = 0
 DP_ECO = 1
@@ -38,6 +42,7 @@ class CarState(CarStateBase):
     self.accurate_steer_angle_seen = CP.carFingerprint in TSS2_CAR or CP.carFingerprint in [CAR.LEXUS_ISH] or self.dp_toyota_zss
     self.setspeedcounter = 0
     self.pcm_acc_active = False
+    self.lkas = 1
     self.main_on = False
     self.gas_pressed = False
     self.smartspeed = 0
@@ -142,7 +147,9 @@ class CarState(CarStateBase):
           sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON']
         except KeyError:
           sport_on = 0
-    if not travis:
+    if physical_buttons_LKAS:
+      self.lkas = cp_cam.vl["LKAS_HUD"]['SET_ME_X01']
+    if not travis and physical_buttons_AP:
       if econ_on == 1 and dp_profile !=  DP_ECO:
         if int(Params().get('dp_accel_profile')) != DP_ECO:
           put_nonblocking('dp_accel_profile',str(DP_ECO))
@@ -156,7 +163,7 @@ class CarState(CarStateBase):
           put_nonblocking('dp_accel_profile',str(DP_NORMAL))
           put_nonblocking('dp_last_modified',str(floor(time.time())))
     #Arne Blindspot code.
-    if frame > 999 and self.CP.carFingerprint == CAR.RAV4H:#not (self.CP.carFingerprint in TSS2_CAR or self.CP.carFingerprint == CAR.CAMRY or self.CP.carFingerprint == CAR.CAMRYH):
+    if frame > 999 and self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDER]:#not (self.CP.carFingerprint in TSS2_CAR or self.CP.carFingerprint == CAR.CAMRY or self.CP.carFingerprint == CAR.CAMRYH):
       if cp.vl["DEBUG"]['BLINDSPOTSIDE']==65: #Left
         if cp.vl["DEBUG"]['BLINDSPOTD1'] != self.leftblindspotD1:
           self.leftblindspotD1 = cp.vl["DEBUG"]['BLINDSPOTD1']
@@ -195,7 +202,7 @@ class CarState(CarStateBase):
       self.rightblindspotD1 = 10.1
       self.rightblindspotD2 = 10.1
     #Arne Distance button read and write code.
-    if self.read_distance_lines != cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']:
+    if self.read_distance_lines != cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES'] and physical_buttons_DF:
       self.read_distance_lines = cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']
       put_nonblocking('dp_dynamic_follow', str(int(max(self.read_distance_lines, 0))))
       put_nonblocking('dp_last_modified',str(floor(time.time())))
@@ -355,7 +362,7 @@ class CarState(CarStateBase):
     self.steer_state = cp.vl["EPS_STATUS"]['LKA_STATE']
 
     self.distance = cp_cam.vl["ACC_CONTROL"]['DISTANCE']
-    if self.CP.carFingerprint == CAR.RAV4H:
+    if self.CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDER]:
       self.distance = cp.vl["SDSU"]['FD_BUTTON']
     if self.CP.carFingerprint in TSS2_CAR:
       ret.leftBlindspot = (cp.vl["BSM"]['L_ADJACENT'] == 1) or (cp.vl["BSM"]['L_APPROACHING'] == 1)
@@ -497,7 +504,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.PRIUS:
       signals.append(("STATE", "AUTOPARK_STATUS", 0))
 
-    if CP.carFingerprint == CAR.RAV4H:
+    if CP.carFingerprint in [CAR.RAV4H, CAR.HIGHLANDER]:
       signals.append(("FD_BUTTON", "SDSU", 0))
       signals.append(("BLINDSPOT","DEBUG", 0))
       signals.append(("BLINDSPOTSIDE","DEBUG",65))
@@ -539,6 +546,7 @@ class CarState(CarStateBase):
       ("TSGN4", "RSA2", 0),
       ("SPLSGN4", "RSA2", 0),
       ("DISTANCE", "ACC_CONTROL", 0),
+      ("SET_ME_X01", "LKAS_HUD", 0),
     ]
 
     # use steering message to check if panda is connected to frc
