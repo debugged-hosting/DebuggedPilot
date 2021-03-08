@@ -417,7 +417,7 @@ class Way:
         loop_must_break = False
         for n in way.way.nodes:
           if 'highway' in n.tags and (n.tags['highway']=='stop' or n.tags['highway']=='give_way' or n.tags['highway']=='mini_roundabout' or (n.tags['highway']=='traffic_signals' and traffic_lights)) and way_pts[count,0] > 0:
-            if traffic_status == 'DEAD':
+            if traffic_status == 'DEAD' and n.tags['highway']=='traffic_signals':
               pass
             elif traffic_confidence >= 50 and n.tags['highway']=='traffic_signals' and (traffic_status == 'GREEN' or (traffic_status == 'NONE' and not last_not_none_signal == 'SLOW')):
               break

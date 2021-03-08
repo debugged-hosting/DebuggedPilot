@@ -494,7 +494,7 @@ class MessagedArneThread(LoggerThread):
         # invoke parent constructor
         LoggerThread.__init__(self, threadID, name)
         self.sharedParams = sharedParams
-        self.sm = messaging.SubMaster(['liveTrafficData'])#,'trafficModelEvent'])
+        self.sm = messaging.SubMaster(['liveTrafficData','trafficModelEvent'])
         #self.logger.debug("entered messageArned_thread, ... %s" % str(self.arne_sm))
     def run(self):
         self.logger.debug("Entered run method for thread :" + str(self.name))
@@ -517,21 +517,21 @@ class MessagedArneThread(LoggerThread):
                 start = time.time()
             self.logger.debug("starting new cycle in endless loop")
             self.sm.update(0)
-            #if self.arne_sm.updated['trafficModelEvent']:
-             # traffic_status = self.arne_sm['trafficModelEvent'].status
-              #traffic_confidence = round(self.arne_sm['trafficModelEvent'].confidence * 100, 2)
-              #if traffic_confidence >= 50 and (traffic_status == 'GREEN' or traffic_status == 'SLOW'):
-                #last_not_none_signal = traffic_status
-                #last_not_none_signal_counter = 0
-              #elif traffic_confidence >= 50 and traffic_status == 'NONE' and last_not_none_signal != 'NONE':
-                #if last_not_none_signal_counter < 25:
-                  #last_not_none_signal_counter = last_not_none_signal_counter + 1
+            if self.sm.updated['trafficModelEvent']:
+              traffic_status = self.sm['trafficModelEvent'].status
+              traffic_confidence = round(self.sm['trafficModelEvent'].confidence * 100, 2)
+              if traffic_confidence >= 50 and (traffic_status == 'GREEN' or traffic_status == 'SLOW'):
+                last_not_none_signal = traffic_status
+                last_not_none_signal_counter = 0
+              elif traffic_confidence >= 50 and traffic_status == 'NONE' and last_not_none_signal != 'NONE':
+                if last_not_none_signal_counter < 25:
+                  last_not_none_signal_counter = last_not_none_signal_counter + 1
                   #print("self.last_not_none_signal_counter")
                   #print(self.last_not_none_signal_counter)
                   #print("self.last_not_none_signal")
                   #print(self.last_not_none_signal)
-              #else:
-                  #last_not_none_signal = 'NONE'
+              else:
+                  last_not_none_signal = 'NONE'
             query_lock = self.sharedParams.get('query_lock', None)
             query_lock.acquire()
             speedLimittrafficvalid = self.sharedParams['speedLimittrafficvalid']

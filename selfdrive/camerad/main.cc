@@ -25,7 +25,7 @@
 #include "common/util.h"
 #include "common/visionipc.h"
 
-#define MAX_CLIENTS 6
+#define MAX_CLIENTS 7
 
 volatile sig_atomic_t do_exit = 0;
 

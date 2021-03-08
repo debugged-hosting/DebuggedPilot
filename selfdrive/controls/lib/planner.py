@@ -232,8 +232,13 @@ class Planner():
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
 
     following = (lead_1.status and lead_1.dRel < 45.0 and lead_1.vRel < 0.0) or (lead_2.status and lead_2.dRel < 45.0 and lead_2.vRel < 0.0) #lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
-
-    speed_ahead_distance = default_brake_distance
+    
+    if self.dp_profile == DP_SPORT:
+      speed_ahead_distance = 150
+    elif self.dp_profile == DP_ECO:
+      speed_ahead_distance = 350
+    else:
+      speed_ahead_distance = default_brake_distance
 
     v_speedlimit = NO_CURVATURE_SPEED
     v_curvature_map = NO_CURVATURE_SPEED
@@ -289,6 +294,8 @@ class Planner():
     decel_for_turn = bool(v_curvature_map < min([v_cruise_setpoint, v_speedlimit, v_ego + 1.]))
 
     # dp
+    if self.dp_profile != sm['dragonConf'].dpAccelProfile:
+      print("self.dp_profile = " + str(self.dp_profile))
     self.dp_profile = sm['dragonConf'].dpAccelProfile
     self.dp_slow_on_curve = sm['dragonConf'].dpSlowOnCurve
 
@@ -317,7 +324,7 @@ class Planner():
       if self.dp_profile == DP_OFF:
         accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
       else:
-        accel_limits = [float(x) for x in dp_calc_cruise_accel_limits(v_ego, following, self.dp_profile and (self.longitudinalPlanSource == 'mpc1' or self.longitudinalPlanSource == 'mpc2'))]
+        accel_limits = [float(x) for x in dp_calc_cruise_accel_limits(v_ego, following and (self.longitudinalPlanSource == 'mpc1' or self.longitudinalPlanSource == 'mpc2'), self.dp_profile)]
       jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngle, accel_limits, self.CP)
 
