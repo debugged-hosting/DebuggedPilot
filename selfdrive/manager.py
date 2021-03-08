@@ -13,6 +13,8 @@ from typing import Dict, List
 from selfdrive.swaglog import cloudlog, add_logentries_handler
 from common.op_params import opParams
 
+traffic_lights = opParams().get('traffic_lights')
+
 import re
 from common.dp_conf import init_params_vals
 
@@ -182,6 +184,7 @@ ThermalStatus = cereal.log.ThermalData.ThermalStatus
 # comment out anything you don't want to run
 managed_processes = {
   "thermald": "selfdrive.thermald.thermald",
+  "traffic_manager": "selfdrive.trafficd.traffic_manager",
   "uploader": "selfdrive.loggerd.uploader",
   "deleter": "selfdrive.loggerd.deleter",
   "controlsd": "selfdrive.controls.controlsd",
@@ -280,6 +283,11 @@ driver_view_processes = [
   'dmonitoringmodeld'
 ]
 
+if traffic_lights:
+  car_started_processes += [
+    'traffic_manager',
+  ]
+  
 if WEBCAM:
   car_started_processes += [
     'dmonitoringd',
