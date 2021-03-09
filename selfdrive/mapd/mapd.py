@@ -14,16 +14,19 @@ import logging.handlers
 from scipy import spatial
 import selfdrive.crash as crash
 from common.params import Params
+from common.basedir import BASEDIR
 from collections import defaultdict
 import cereal.messaging as messaging
 #import cereal.messaging_arne as messaging_arne
 from selfdrive.version import version, dirty
 from common.transformations.coordinates import geodetic2ecef
 from selfdrive.mapd.mapd_helpers import MAPS_LOOKAHEAD_DISTANCE, Way, circle_through_points, rate_curvature_points
+from selfdrive.trafficd.traffic_manager import TrafficdThread
 
 #DEFAULT_SPEEDS_BY_REGION_JSON_FILE = BASEDIR + "/selfdrive/mapd/default_speeds_by_region.json"
 #from selfdrive.mapd import default_speeds_generator
 #default_speeds_generator.main(DEFAULT_SPEEDS_BY_REGION_JSON_FILE)
+
 
 # define LoggerThread class to implement logging functionality
 class LoggerThread(threading.Thread):
@@ -66,7 +69,8 @@ class QueryThread(LoggerThread):
             'Accept-Encoding': 'gzip'
         }
         self.prev_ecef = None
-
+        self.trafficd_thread = TrafficdThread()
+        
     def is_connected_to_local(self, timeout=3.0):
         try:
             requests.get(self.OVERPASS_API_LOCAL, timeout=timeout)
@@ -220,6 +224,20 @@ class QueryThread(LoggerThread):
                         query_lock.release()
                     else:
                         self.logger.error("There is not query_lock")
+                    traffic_light_in_range = False
+                    for n in real_nodes:
+                        if 'highway' in n.tags:
+                            if n.tags['highway'] == 'traffic_signals':
+                                traffic_light_in_range = True
+                                break
+                        if 'railway' in n.tags:
+                            if n.tags['railway'] == 'level_crossing':
+                                traffic_light_in_range = True
+                                break
+                    if self.trafficd_thread.running and not traffic_light_in_range:
+                        self.trafficd_thread.stop()
+                    if traffic_light_in_range and not self.trafficd_thread.running:
+                        self.trafficd_thread.start()
 
                 except Exception as e:
                     self.logger.error("ERROR :" + str(e))
@@ -494,7 +512,7 @@ class MessagedArneThread(LoggerThread):
         # invoke parent constructor
         LoggerThread.__init__(self, threadID, name)
         self.sharedParams = sharedParams
-        self.sm = messaging.SubMaster(['liveTrafficData'])#,'trafficModelEvent'])
+        self.sm = messaging.SubMaster(['liveTrafficData','trafficModelEvent'])
         #self.logger.debug("entered messageArned_thread, ... %s" % str(self.arne_sm))
     def run(self):
         self.logger.debug("Entered run method for thread :" + str(self.name))
@@ -517,21 +535,21 @@ class MessagedArneThread(LoggerThread):
                 start = time.time()
             self.logger.debug("starting new cycle in endless loop")
             self.sm.update(0)
-            #if self.arne_sm.updated['trafficModelEvent']:
-             # traffic_status = self.arne_sm['trafficModelEvent'].status
-              #traffic_confidence = round(self.arne_sm['trafficModelEvent'].confidence * 100, 2)
-              #if traffic_confidence >= 50 and (traffic_status == 'GREEN' or traffic_status == 'SLOW'):
-                #last_not_none_signal = traffic_status
-                #last_not_none_signal_counter = 0
-              #elif traffic_confidence >= 50 and traffic_status == 'NONE' and last_not_none_signal != 'NONE':
-                #if last_not_none_signal_counter < 25:
-                  #last_not_none_signal_counter = last_not_none_signal_counter + 1
+            if self.sm.updated['trafficModelEvent']:
+              traffic_status = self.sm['trafficModelEvent'].status
+              traffic_confidence = round(self.sm['trafficModelEvent'].confidence * 100, 2)
+              if traffic_confidence >= 50 and (traffic_status == 'GREEN' or traffic_status == 'SLOW'):
+                last_not_none_signal = traffic_status
+                last_not_none_signal_counter = 0
+              elif traffic_confidence >= 50 and traffic_status == 'NONE' and last_not_none_signal != 'NONE':
+                if last_not_none_signal_counter < 25:
+                  last_not_none_signal_counter = last_not_none_signal_counter + 1
                   #print("self.last_not_none_signal_counter")
                   #print(self.last_not_none_signal_counter)
                   #print("self.last_not_none_signal")
                   #print(self.last_not_none_signal)
-              #else:
-                  #last_not_none_signal = 'NONE'
+              else:
+                  last_not_none_signal = 'NONE'
             query_lock = self.sharedParams.get('query_lock', None)
             query_lock.acquire()
             speedLimittrafficvalid = self.sharedParams['speedLimittrafficvalid']

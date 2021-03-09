@@ -698,7 +698,16 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert(_("Reverse Gear")),
     ET.NO_ENTRY: NoEntryAlert(_("Reverse Gear")),
   },
-
+  
+  EventName.reverseGearArne: {
+    ET.WARNING: Alert(
+      "REVERSING",
+      "Reverse Gear",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.none, 2.2, 3., 4.),
+    ET.NO_ENTRY: NoEntryAlert("Reverse Gear"),
+  },
+  
   EventName.cruiseDisabled: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert(_("Cruise Is Off")),
   },
@@ -766,6 +775,22 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       _("Brake Pressed Acceleration Disabled"),
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, .4, 2., 0.2),
+  },
+
+  EventName.latControlDisabled: {
+    ET.WARNING: Alert(
+      _("Steer Assist Deactivated"),
+      _("Brake Pressed Acceleration Disabled"),
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .4, 2., 0.2),
+  },
+  
+  EventName.waitingMode: {
+    ET.WARNING: Alert(
+      "WAITING...",
+      "Press gas/resume to gain full control!",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 0.2),
   },
 
   # dp

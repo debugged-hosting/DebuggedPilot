@@ -70,8 +70,12 @@ class DynamicFollow:
     self.auto_df_model_data = []
     self._get_live_params()  # so they're defined just in case
 
-  def update(self, CS, libmpc):
-    self._get_live_params()
+  def update(self, CS, libmpc, dp_dynamic_follow):
+    #self._get_live_params()
+    if dp_dynamic_follow is not None and 0 < dp_dynamic_follow < 4:
+      if dp_dynamic_follow != self.dp_dynamic_follow:
+        print("New dp_dynamic_follow = " + str(self.dp_dynamic_follow))
+      self.dp_dynamic_follow = dp_dynamic_follow
     self._update_car(CS)
     self._get_profiles()
 
@@ -330,7 +334,7 @@ class DynamicFollow:
   def _get_live_params(self):
     self.last_modified_check, self.modified = get_last_modified(LAST_MODIFIED_DYNAMIC_FOLLOW, self.last_modified_check, self.modified)
     if self.last_modified != self.modified:
-      self.dp_dynamic_follow, self.dp_dynamic_follow_last_modified = param_get_if_updated("dp_dynamic_follow", "int", self.dp_dynamic_follow, self.dp_dynamic_follow_last_modified)
+      #self.dp_dynamic_follow, self.dp_dynamic_follow_last_modified = param_get_if_updated("dp_dynamic_follow", "int", self.dp_dynamic_follow, self.dp_dynamic_follow_last_modified)
       self.global_df_mod, self.dp_dynamic_follow_multiplier_last_modified = param_get_if_updated("dp_dynamic_follow_multiplier", "float", self.global_df_mod, self.dp_dynamic_follow_multiplier_last_modified)
       if self.global_df_mod != 1.:
         self.global_df_mod = clip(self.global_df_mod, .85, 9.99)

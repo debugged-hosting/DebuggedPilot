@@ -13,6 +13,8 @@ from typing import Dict, List
 from selfdrive.swaglog import cloudlog, add_logentries_handler
 from common.op_params import opParams
 
+traffic_lights = opParams().get('traffic_lights')
+
 import re
 from common.dp_conf import init_params_vals
 
@@ -139,6 +141,8 @@ if not prebuilt:
           #shutil.rmtree("/data/scons_cache", ignore_errors=True)
         else:
           print("scons build failed after retry")
+          process = subprocess.check_output(['git', 'pull'])
+          os.system('reboot')
           sys.exit(1)
       else:
         # Build failed log errors
@@ -158,7 +162,8 @@ if not prebuilt:
         error_s = "\n \n".join(["\n".join(textwrap.wrap(e, 65)) for e in errors])
         with TextWindow(("openpilot failed to build (IP: %s)\n \n" % ip) + error_s) as t:
           t.wait_for_exit()
-
+        process = subprocess.check_output(['git', 'pull'])
+        os.system('reboot')
         exit(1)
     else:
       break
@@ -179,6 +184,7 @@ ThermalStatus = cereal.log.ThermalData.ThermalStatus
 # comment out anything you don't want to run
 managed_processes = {
   "thermald": "selfdrive.thermald.thermald",
+  "traffic_manager": "selfdrive.trafficd.traffic_manager",
   "uploader": "selfdrive.loggerd.uploader",
   "deleter": "selfdrive.loggerd.deleter",
   "controlsd": "selfdrive.controls.controlsd",
@@ -277,6 +283,11 @@ driver_view_processes = [
   'dmonitoringmodeld'
 ]
 
+if traffic_lights:
+  car_started_processes += [
+    'traffic_manager',
+  ]
+  
 if WEBCAM:
   car_started_processes += [
     'dmonitoringd',
@@ -617,9 +628,6 @@ def main():
     ("OpenpilotEnabledToggle", "1"),
     ("LaneChangeEnabled", "1"),
     ("IsDriverViewEnabled", "0"),
-    ("DistanceTraveled", "0"),
-    ("DistanceTraveledEngaged", "0"),
-    ("DistanceTraveledOverride", "0"),
   ]
 
   # set unset params
@@ -700,7 +708,8 @@ if __name__ == "__main__":
     error = ("Manager failed to start (IP: %s)\n \n" % ip) + error
     with TextWindow(error) as t:
       t.wait_for_exit()
-
+    process = subprocess.check_output(['git', 'pull'])
+    os.system('reboot')
     raise
 
   # manual exit because we are forked

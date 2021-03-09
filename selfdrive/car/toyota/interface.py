@@ -42,6 +42,7 @@ class CarInterface(CarInterfaceBase):
     if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H, CAR.PRIUS_TSS2]:  # These cars use LQR/INDI
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kfBP = [[0.], [0.], [0.]]
+      ret.lateralTuning.pid.kdBP, ret.lateralTuning.pid.kdV = [[0.], [0.]]
       ret.lateralTuning.pid.newKfTuned = False
 
     if candidate == CAR.PRIUS:
@@ -73,7 +74,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
       #ret.stoppingBrakeRate = 0.16 # reach stopping target smoothly
       #ret.startingBrakeRate = 0.9 # release brakes fast
-      #ret.startAccel = 1.60 # Accelerate from 0 faster
+      ret.startAccel = 1.4 # Accelerate from 0 faster
       stop_and_go = True
       ret.safetyParam = 55
       ret.wheelbase = 2.70002
@@ -81,25 +82,19 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
       ret.steerActuatorDelay = 0.5
-      #ret.steerLimitTimer = 0.1 #5.0
-      #ret.steerRateCost = 0.25 #0.45
-      #ret.steerLimitTimer = 5.0
+      #ret.steerLimitTimer = 0.70
       if prius_pid:
+        ret.steerLimitTimer = 0.70
         ret.lateralTuning.init('pid')
         ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kfBP = [[0.], [0.], [0.]]
-        ret.lateralTuning.pid.newKfTuned = False
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.21], [0.008]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.07], [0.04]]
+        ret.lateralTuning.pid.kdV = [0.0]
         ret.lateralTuning.pid.kfV = [0.00009531750004645412]
+        ret.lateralTuning.pid.newKfTuned = True
       else:
+        ret.steerRateCost = 0.45 #0.45
+        ret.steerLimitTimer = 5.0
         ret.lateralTuning.init('indi')
-        ret.lateralTuning.indi.innerLoopGainBP = [16.7, 25, 30]
-        ret.lateralTuning.indi.innerLoopGainV = [4.0, 4.06, 4.1]
-        ret.lateralTuning.indi.outerLoopGainBP = [16.7, 25, 30]
-        ret.lateralTuning.indi.outerLoopGainV = [3.0, 3.02, 3.06]
-        ret.lateralTuning.indi.timeConstantBP = [0]
-        ret.lateralTuning.indi.timeConstantV = [0.1]
-        ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 30]
-        ret.lateralTuning.indi.actuatorEffectivenessV = [1.0, 1.1]
         #ret.lateralTuning.indi.innerLoopGainBP = [16.7, 25]
         #ret.lateralTuning.indi.innerLoopGainV = [15, 15]
         #ret.lateralTuning.indi.outerLoopGainBP = [8.3, 25, 27.7, 36.1]
@@ -109,14 +104,14 @@ class CarInterface(CarInterfaceBase):
         #ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 25]
         #ret.lateralTuning.indi.actuatorEffectivenessV = [15, 15]
         #ret.lateralTuning.init('indi') #really good tune from cgw.
-        #ret.lateralTuning.indi.innerLoopGainBP = [16.7, 25, 36.1]
-        #ret.lateralTuning.indi.innerLoopGainV = [9.5, 15, 15]
-        #ret.lateralTuning.indi.outerLoopGainBP = [16.7, 25, 36.1]
-        #ret.lateralTuning.indi.outerLoopGainV = [9.5, 14.99, 14.99]
-        #ret.lateralTuning.indi.timeConstantBP = [16.7, 16.71, 22, 22.01, 26, 26.01, 36, 36.01]
-        #ret.lateralTuning.indi.timeConstantV = [0.5, 1, 1, 2, 2, 4, 4, 5]
-        #ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 25, 36.1]
-        #ret.lateralTuning.indi.actuatorEffectivenessV = [9.5, 15, 15]
+        ret.lateralTuning.indi.innerLoopGainBP = [16.7, 25, 36.1]
+        ret.lateralTuning.indi.innerLoopGainV = [9.5, 15, 15]
+        ret.lateralTuning.indi.outerLoopGainBP = [16.7, 25, 36.1]
+        ret.lateralTuning.indi.outerLoopGainV = [9.5, 14.99, 14.99]
+        ret.lateralTuning.indi.timeConstantBP = [16.7, 16.71, 22, 22.01, 26, 26.01, 36, 36.01]
+        ret.lateralTuning.indi.timeConstantV = [0.5, 1, 1, 2, 2, 4, 4, 5]
+        ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 25, 36.1]
+        ret.lateralTuning.indi.actuatorEffectivenessV = [9.5, 15, 15]
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
@@ -148,7 +143,8 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
-      ret.lateralTuning.pid.kfV = [0.00003]   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kfV = [0.00006908923778520113]   # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.newKfTuned = True
 
     elif candidate == CAR.LEXUS_RX:
       stop_and_go = True
@@ -245,23 +241,27 @@ class CarInterface(CarInterfaceBase):
       ret.safetyParam = 56
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
-      ret.steerRateCost = 0.3
+      ret.steerRateCost = 0.1
       tire_stiffness_factor = 0.7933
       ret.mass = 3370. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.longitudinalTuning.kpV = [2.1, 1.2, 0.34]
-      ret.longitudinalTuning.kiV = [0.54, 0.34]
-      ret.stoppingBrakeRate = 0.16 # reach stopping target smoothly
-      ret.startingBrakeRate = 0.75 # release brakes fast
-      ret.startAccel = 1.30 # Accelerate from 0 faster
-      ret.steerActuatorDelay = 0.12
-      ret.steerLimitTimer = 0.1
+      ret.longitudinalTuning.deadzoneBP = [0., 8.05]
+      ret.longitudinalTuning.deadzoneV = [.0, .14]
+      ret.longitudinalTuning.kpBP = [0., 5., 20.]
+      ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7]
+      ret.longitudinalTuning.kiBP = [0., 5., 12., 20., 27.]
+      ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
+      ret.stoppingBrakeRate = 0.165 # reach stopping target smoothly
+      ret.startingBrakeRate = 0.9 # release brakes fast
+      ret.startAccel = 1.50 # Accelerate from 0 faster
+      ret.steerActuatorDelay = 0
+      ret.steerLimitTimer = 0.4
       ret.lateralTuning.init('indi')
       ret.lateralTuning.indi.innerLoopGainBP = [16.7, 25]
       ret.lateralTuning.indi.innerLoopGainV = [15, 15]
-      ret.lateralTuning.indi.outerLoopGainBP = [8.3, 11.1, 13.9, 16.7, 19.4, 22.2,  25, 30.1, 33.3, 36.1]
-      ret.lateralTuning.indi.outerLoopGainV = [4.6, 6.2, 8.3, 10.4, 12.8, 14.99, 16, 17, 18, 19]
-      ret.lateralTuning.indi.timeConstantBP = [8.3, 11.1, 13.9, 16.7, 19.4, 22.2, 25, 30.1, 33.3, 36.1]
-      ret.lateralTuning.indi.timeConstantV = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.0, 4.0, 4.0]
+      ret.lateralTuning.indi.outerLoopGainBP = [8.3, 11.1, 13.9, 16.7, 19.4, 22.2,  25, 30.6, 33.3, 36.1]
+      ret.lateralTuning.indi.outerLoopGainV = [4.65, 6.45, 8.25, 10.05, 11.85, 13.65, 14.99, 14.99, 14.99, 14.99]
+      ret.lateralTuning.indi.timeConstantBP = [8.3, 11.1, 13.9, 16.7, 19.4, 22.2, 25, 30.6, 33.3, 36.1]
+      ret.lateralTuning.indi.timeConstantV = [1.0, 1.3, 1.6, 1.9, 2.2, 2.5, 2.8, 3.4, 3.7, 4.0]
       ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 25]
       ret.lateralTuning.indi.actuatorEffectivenessV = [15, 15]
 
@@ -458,10 +458,13 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def update(self, c, can_strings, dragonconf):
     # ******************* do can recv *******************
-    self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
-
-    ret = self.CS.update(self.cp, self.cp_cam)
+    if self.frame < 1000:
+      self.cp.update_strings(can_strings)
+      ret = self.CS.update(self.cp, self.cp_cam, self.frame)
+    else:
+      self.cp.update_strings(can_strings)
+      ret = self.CS.update(self.cp, self.cp_cam, self.frame)
     # dp
     self.dragonconf = dragonconf
     ret.cruiseState.enabled = common_interface_atl(ret, dragonconf.dpAtl)
@@ -478,18 +481,21 @@ class CarInterface(CarInterfaceBase):
 
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
+    ret.engineRPM = self.CS.engineRPM
 
     # gear except P, R
     extra_gears = [GearShifter.neutral, GearShifter.eco, GearShifter.manumatic, GearShifter.drive, GearShifter.sport, GearShifter.low, GearShifter.brake, GearShifter.unknown]
 
     longControlDisabled = False
     if not self.CS.out.cruiseState.enabled:
+      self.waiting = False
       ret.cruiseState.enabled = self.CS.pcm_acc_active
     else:
       if self.keep_openpilot_engaged:
         ret.cruiseState.enabled = bool(self.CS.main_on)
       if not self.CS.pcm_acc_active:
         longControlDisabled = True
+        self.waiting = False
         ret.brakePressed = True
         self.disengage_due_to_slow_speed = False
     if ret.vEgo < 1 or not self.keep_openpilot_engaged:
@@ -499,15 +505,27 @@ class CarInterface(CarInterfaceBase):
     if self.disengage_due_to_slow_speed and ret.vEgo > 1 and ret.gearShifter != GearShifter.reverse:
       self.disengage_due_to_slow_speed = False
       ret.cruiseState.enabled = bool(self.CS.main_on)
-
+    self.lkas = self.CS.lkas
     # events
     events = self.create_common_events(ret, extra_gears)
 
     if longControlDisabled:
       events.add(EventName.longControlDisabled)
+      
+    if self.lkas == 0:
+      events.add(EventName.latControlDisabled)
 
     # if self.cp_cam.can_invalid_cnt >= 200 and self.CP.enableCamera and not self.CP.isPandaBlack:
     #   events.add(EventName.invalidGiraffeToyotaDEPRECATED)
+
+    if not self.waiting and ret.vEgo < 0.3 and not ret.gasPressed and self.CP.carFingerprint == CAR.RAV4H:
+      self.waiting = True
+    if self.waiting:
+      if ret.gasPressed:
+        self.waiting = False
+      else:
+        events.add(EventName.waitingMode)
+
     if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
       events.add(EventName.lowSpeedLockout)
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
@@ -532,7 +550,7 @@ class CarInterface(CarInterfaceBase):
                                c.actuators, c.cruiseControl.cancel,
                                c.hudControl.visualAlert, c.hudControl.leftLaneVisible,
                                c.hudControl.rightLaneVisible, c.hudControl.leadVisible,
-                               c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart, self.dragonconf)
+                               c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart, self.dragonconf, self.lkas)
 
     self.frame += 1
     return can_sends
