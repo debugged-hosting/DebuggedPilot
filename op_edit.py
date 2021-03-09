@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-# flake8: noqa
-#pylint: skip-file
 import time
+from common.op_params import opParams
 import ast
 import difflib
-
-from common.op_params import opParams
 from common.colors import COLORS
 from collections import OrderedDict
 

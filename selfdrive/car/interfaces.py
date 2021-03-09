@@ -9,6 +9,8 @@ from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 from common.travis_checker import travis
+from common.op_params import opParams
+
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS  # 144 + 4 = 92 mph
@@ -35,6 +37,7 @@ class CarInterfaceBase():
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
+    self.disengage_on_gas = opParams().get('disengage_on_gas')
 
     self.dragonconf = None
     self.lkas = 1

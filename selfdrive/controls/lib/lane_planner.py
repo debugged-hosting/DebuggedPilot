@@ -5,7 +5,7 @@ from common.dp_common import get_last_modified, param_get_if_updated
 from common.dp_time import LAST_MODIFIED_LANE_PLANNER
 from common.travis_checker import travis
 CAMERA_OFFSET = 0.06  # m from center car to camera
-
+from common.op_params import opParams
 
 def compute_path_pinv(length=50):
   deg = 3
@@ -25,6 +25,8 @@ def eval_poly(poly, x):
 
 class LanePlanner:
   def __init__(self):
+    self.op_params = opParams()
+
     self.l_poly = [0., 0., 0., 0.]
     self.r_poly = [0., 0., 0., 0.]
     self.p_poly = [0., 0., 0., 0.]

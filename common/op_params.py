@@ -11,6 +11,8 @@ except ImportError:
   sec_since_boot = time.time
   warning("Using python time.time() instead of faster sec_since_boot")
 
+travis = False  # replace with travis_checker if you use travis or GitHub Actions
+
 
 class ValueTypes:
   number = [float, int]
@@ -33,13 +35,7 @@ class Param:
   def is_valid(self, value):
     if not self.has_allowed_types:
       return True
-    if self.is_list and isinstance(value, list):
-      for v in value:
-        if type(v) not in self.allowed_types:
-          return False
-      return True
-    else:
-      return type(value) in self.allowed_types or value in self.allowed_types
+    return type(value) in self.allowed_types
 
   def _create_attrs(self):  # Create attributes and check Param is valid
     self.has_allowed_types = isinstance(self.allowed_types, list) and len(self.allowed_types) > 0
@@ -136,6 +132,16 @@ class opParams:
                         'indi_actuator_effectiveness_v': Param([9, 12, 15], [list, float, int], live=True, depends_on='enable_indi_live'),
                         'steer_limit_timer': Param(0.4, VT.number, live=True, depends_on='enable_indi_live')
                        }
+    self.fork_params = {
+                        'camera_offset': Param(0.06, VT.number, 'Your camera offset to use in lane_planner.py', live=True),
+                        'slow_in_turns': Param(True, bool, 'Slow while in turns'),
+                        'slow_in_turns_ratio': Param(1.25, VT.number, 'Percent to adjust the slow down speed in turns. (1=Normal, 1.25=Increase speed by 25%)'),
+                        'disengage_on_gas': Param(True, bool, 'Whether you want openpilot to disengage on gas input or not'),
+                        'lead_distance_ratio_1bar': Param(1.8, VT.number, 'Lead car adjusted radar distance ratio 1 bar', live=True),
+                        'lead_distance_ratio_2bars': Param(1.6, VT.number, 'Lead car adjusted radar distance ratio 2 bar', live=True),
+                        'lead_distance_ratio_3bars': Param(1.4, VT.number, 'Lead car adjusted radar distance ratio 3 bar', live=True),
+                        'lead_distance_ratio_4bars': Param(1.2, VT.number, 'Lead car adjusted radar distance ratio 4 bar', live=True),
+                        }
 
     self._params_file = '/data/op_params.json'
     self._backup_file = '/data/op_params_corrupt.json'
@@ -143,6 +149,7 @@ class opParams:
     self.read_frequency = 2.5  # max frequency to read with self.get(...) (sec)
     self._to_delete = ['reset_integral', 'log_data']  # a list of params you want to delete (unused)
     self._last_mod_time = 0.
+    self._to_delete = ['lane_hug_direction', 'lane_hug_angle_offset', 'prius_use_lqr']  # a list of params you want to delete (unused)
     self._run_init()  # restores, reads, and updates params
 
   def _run_init(self):  # does first time initializing of default params
@@ -161,6 +168,10 @@ class opParams:
     if travis:
       return
 
+    if travis:
+      return
+
+    to_write = False
     if os.path.isfile(self._params_file):
       if self._read():
         to_write = self._add_default_params()  # if new default data has been added
@@ -259,6 +270,13 @@ class opParams:
       except Exception as e:
         print("Unable to read file: " + str(e))
         return False
+    try:
+      with open(self._params_file, "r") as f:
+        self.params = json.loads(f.read())
+      return True
+    except Exception as e:
+      error(e)
+      return False
 
   def _write(self):
     if not travis:

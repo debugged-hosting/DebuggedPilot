@@ -19,8 +19,7 @@ class COLORS:
     self.BLUE_GREEN = self.BASE(85)
 
     self.FAIL = self.RED
-    # self.INFO = self.PURPLE_BG
-    self.INFO = self.BASE(207)
+    self.INFO = self.PURPLE_BG
     self.SUCCESS = self.OKGREEN
     self.PROMPT = self.YELLOW
     self.DBLUE = '\033[36m'
