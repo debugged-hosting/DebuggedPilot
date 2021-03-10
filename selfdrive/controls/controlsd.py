@@ -6,11 +6,11 @@ from common.numpy_fast import clip, interp
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
+from common.op_params import opParams
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
-from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -49,6 +49,7 @@ class Controls:
     config_realtime_process(3, Priority.CTRL_HIGH)
 
     params = Params()
+    self.op_params = opParams()
 
     # Setup sockets
     self.pm = pm
@@ -340,10 +341,7 @@ class Controls:
     self.v_cruise_kph_last = self.v_cruise_kph
 
     # if stock cruise is completely disabled, then we can use our own set speed logic
-    if not self.CP.enableCruise:
-      self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.enabled)
-    elif self.CP.enableCruise and CS.cruiseState.enabled:
-      self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+    self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.enabled)
 
     # decrease the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
@@ -478,6 +476,7 @@ class Controls:
     speed_override = max(0.0, (self.LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount)
     CC.cruiseControl.speedOverride = float(speed_override if self.CP.enableCruise else 0.0)
     CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.sm['plan'].aTarget, CS.vEgo, self.sm['plan'].vTarget)
+    CC.cruiseControl.targetSpeed = self.sm['plan'].vTargetFuture
 
     CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
     CC.hudControl.speedVisible = self.enabled

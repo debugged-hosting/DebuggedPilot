@@ -8,6 +8,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
+from common.op_params import opParams
 
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
@@ -32,6 +33,7 @@ class CarInterfaceBase():
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
+    self.disengage_on_gas = opParams().get('disengage_on_gas')
 
     self.dragonconf = None
 

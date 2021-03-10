@@ -25,6 +25,8 @@ def eval_poly(poly, x):
 
 class LanePlanner:
   def __init__(self):
+    self.op_params = opParams()
+
     self.l_poly = [0., 0., 0., 0.]
     self.r_poly = [0., 0., 0., 0.]
     self.p_poly = [0., 0., 0., 0.]
