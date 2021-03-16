@@ -1,10 +1,38 @@
 #!/usr/bin/env python3
 
 from common.numpy_fast import clip
+from common.basedir import BASEDIR
+from common.realtime import sec_since_boot
 import cereal.messaging as messaging
 import numpy as np
 import time
-from common.realtime import sec_since_boot
+import subprocess
+import os
+import signal
+
+
+class TrafficdThread:
+  def __init__(self):
+    self.proc_path = 'selfdrive/trafficd/trafficd'
+    self.proc = None
+    self.running = False
+
+  def start(self):
+    if not self.running:
+      self.proc = subprocess.Popen(os.path.join(BASEDIR, self.proc_path), cwd=os.path.join(BASEDIR, os.path.dirname(self.proc_path)))
+      self.running = True
+      print('trafficd starting')
+    else:
+      print('trafficd already running')
+
+  def stop(self):
+    if self.proc is not None and self.running:
+      self.proc.send_signal(signal.SIGINT)
+      self.running = False
+      print('trafficd stopped')
+    else:
+      print('trafficd not running, can\'t stop')
+
 
 
 class Traffic:
@@ -13,7 +41,7 @@ class Traffic:
     self.sm = messaging.SubMaster(['trafficModelRaw'])
 
     self.labels = ['SLOW', 'GREEN', 'NONE']
-    self.model_rate = 1 / 5.
+    self.model_rate = 1 / 3.
     self.recurrent_length = 1.  # in seconds, how far back to factor into current prediction
     self.min_preds = int(round(self.recurrent_length / self.model_rate))
     self.last_pred_weight = 5.  # places nx weight on most recent prediction
@@ -46,7 +74,7 @@ class Traffic:
         if not self.shown_dead_warning and self.last_log['log'] != 0:
           self.send_prediction('DEAD', 1.0)  # only show once
           self.shown_dead_warning = True
-        print("No response from trafficd in {} seconds. Is it dead?".format(round(sec_since_boot() - self.last_log['time'], 2)))
+          print("No response from trafficd in {} seconds. Is it dead?".format(round(sec_since_boot() - self.last_log['time'], 2)))
         time.sleep(0.5)
 
   def is_new_msg(self):
