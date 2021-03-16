@@ -29,7 +29,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 16.2  # Pacifica Hybrid 2017
     ret.mass = 1964. + STD_CARGO_KG  # kg curb weight Pacifica 2017
     ret.steerLimitTimer = 0.4
-    ret.steerRateCost = 0.7 #0.7 works well
+    #ret.steerRateCost = 0.7 #0.7 works well
     ret.minSteerSpeed = 0 # TF DEVICE
 
     ### INDI TUNE ###
@@ -40,6 +40,22 @@ class CarInterface(CarInterfaceBase):
     # actuatorEffectiveness is gain modulation based on accuracy of path.
     # steerActuatorDelay is how far its looking ahead.
     # steerRateCost is how eager the steering is to make sudden changes.
+
+    ### TUNE FROM JVEPILOT ###
+
+    ret.lateralTuning.init('indi')
+    ret.lateralTuning.indi.innerLoopGainBP = [0, 20, 40]
+    ret.lateralTuning.indi.innerLoopGainV = [1.5, 2.5, 2.5]
+    ret.lateralTuning.indi.outerLoopGainBP = [0, 20, 40]
+    ret.lateralTuning.indi.outerLoopGainV = [2.5, 3.5, 4.0]
+    ret.lateralTuning.indi.timeConstantBP = [0, 20, 40]
+    ret.lateralTuning.indi.timeConstantV = [0.5, 0.8, 0.8]
+    ret.lateralTuning.indi.actuatorEffectivenessBP = [0, 10, 20]
+    ret.lateralTuning.indi.actuatorEffectivenessV = [2.0, 3.8, 4.0]
+    ret.steerActuatorDelay = 0.15
+    ret.steerRateCost = 0.5
+    ret.steerLimitTimer = 0.4
+
 
     #ret.lateralTuning.init('indi')
     #ret.lateralTuning.indi.innerLoopGainBP = [0, 20]
@@ -62,10 +78,10 @@ class CarInterface(CarInterfaceBase):
     
     ### MY PID TUNE - WORKS GOOD BUT JERKY ###
 
-    ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
-    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0375, 0.075], [0.0075, 0.0125]]
-    ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
-    ret.steerActuatorDelay = 0.1 # in seconds
+    #ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
+    #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.0375, 0.075], [0.0075, 0.0125]]
+    #ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+    #ret.steerActuatorDelay = 0.1 # in seconds
 
     ## ARNE STOCK TUNE ##
 
