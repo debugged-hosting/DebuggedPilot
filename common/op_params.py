@@ -71,12 +71,12 @@ class opParams:
     """
 
     VT = ValueTypes()
-    self.fork_params = {'awareness_factor': Param(10., VT.number, 'Multiplier for the awareness times'),
+    self.fork_params = {'awareness_factor': Param(6., VT.number, 'Multiplier for the awareness times'),
                         #'alca_min_speed': Param(20, VT.number, 'Speed limit to start ALC in MPH'),
                         #'alca_nudge_required': Param(False, bool, "Require nudge to start ALC"),
                         #'autoUpdate': Param(True, bool, 'Whether to auto-update'),
                         #'camera_offset': Param(0.06, VT.number, 'Your camera offset to use in lane_planner.py', live=True),
-                        'curvature_factor': Param(1.2, VT.number, 'Multiplier for the curvature slowdown. Increase for less braking.'),
+                        'curvature_factor': Param(1.4, VT.number, 'Multiplier for the curvature slowdown. Increase for less braking.'),
                         'cloak': Param(True, bool, "make comma believe you are on their fork"),
                         #'corolla_tss2_d_tuning': Param(False, bool, 'lateral tuning using PID w/ true derivative'),
                         'default_brake_distance': Param(250.0, VT.number, 'Distance in m to start braking for mapped speeds.'),
@@ -110,9 +110,10 @@ class opParams:
                         'set_speed_offset': Param(True, bool, 'Whether to use Set Speed offset from release4, enables low set speed and jump by 5 kph. False is on'),
                         'smart_speed': Param(True, bool, 'Whether to use Smart Speed for drives above smart_speed_max_vego'),
                         'smart_speed_max_vego': Param(26.8, VT.number, 'Speed limit to ignore Smartspeed in m/s'),
-                        #'spairrowtuning': Param(False, bool, 'INDI Tuning for Corolla Tss2, set steer_up_15 param to True and flash panda'),
+                        'spairrowtuning': Param(False, bool, 'INDI Tuning for Corolla Tss2'),
                         'speed_offset': Param(0, VT.number, 'Speed limit offset in m/s', live=True),
-                        'steer_actuator_delay': Param(0.5, VT.number, 'The steer actuator delay', live=True),
+                        'speed_signs_in_mph': Param(True, bool, 'Display rsa speed in mph'),
+                        #'steer_actuator_delay': Param(0.5, VT.number, 'The steer actuator delay', live=True),
                         #'steer_up_15': Param(False, bool, 'Increase rate of steering up to 15, may fault on some cars'),
                         #'traffic_light_alerts': Param(False, bool, "Switch off the traffic light alerts"),
                         'traffic_lights': Param(False, bool, "Should Openpilot stop for traffic lights"),
@@ -120,7 +121,8 @@ class opParams:
                         #'use_car_caching': Param(True, bool, 'Whether to use fingerprint caching'),
                         #'min_TR': Param(None, VT.none_or_number, 'The minimum allowed following distance in seconds. Default is 0.9 seconds.\n'
                                                                  #'The range is limited from 0.85 to 1.3. Set to None to disable', live=True),
-                        #'use_virtual_middle_line': Param(False, bool, 'For roads over 4m wide, hug right. For roads under 2m wide, hug left.'),
+                        'use_car_caching': Param(True, bool, 'Cache car fingerprint if panda not disconnected.'),
+                        'use_virtual_middle_line': Param(False, bool, 'For roads over 4m wide, hug right. For roads under 2m wide, hug left. European requirement.'),
                         'uniqueID': Param(None, [type(None), str], 'User\'s unique ID'),
                         'update_behavior': Param('auto', str, 'Can be: (\'off\', \'alert\', \'auto\') without quotes\n'
                                                               'off will never update, alert shows an alert on-screen\n'
@@ -134,7 +136,7 @@ class opParams:
                         'indi_time_constant_v': Param([1, 3, 4.5], [list, float, int], live=True, depends_on='enable_indi_live'),
                         'indi_actuator_effectiveness_bp': Param([18, 22, 26], [list, float, int], live=True, depends_on='enable_indi_live'),
                         'indi_actuator_effectiveness_v': Param([9, 12, 15], [list, float, int], live=True, depends_on='enable_indi_live'),
-                        'steer_limit_timer': Param(0.4, VT.number, live=True, depends_on='enable_indi_live')
+                        'steer_limit_timer': Param(0.4, VT.number, live=True, depends_on='enable_indi_live'),
                        }
 
     self._params_file = '/data/op_params.json'

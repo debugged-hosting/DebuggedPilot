@@ -1,4 +1,5 @@
 import os
+import json
 import threading
 import requests
 from common.params import Params, put_nonblocking
@@ -12,11 +13,12 @@ import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
 from cereal import car
 from common.travis_checker import travis
+from common.op_params import opParams
 if not travis:
     import selfdrive.crash as crash
 
 EventName = car.CarEvent.EventName
-
+use_car_caching = opParams().get('use_car_caching')
 
 def get_startup_event(car_recognized, controller_available):
   if comma_remote and tested_branch:
@@ -86,7 +88,12 @@ def only_toyota_left(candidate_cars):
 
 # **** for use live only ****
 def fingerprint(logcan, sendcan, has_relay):
-  params = Params()
+  params = Params()    
+  if not travis:
+    cached_fingerprint = params.get('CachedFingerprint')
+  else:
+    cached_fingerprint = None
+    
   car_selected = params.get('dp_car_selected', encoding='utf8')
   car_detected = params.get('dp_car_detected', encoding='utf8')
   cached_params = params.get("CarParamsCache")
@@ -132,6 +139,15 @@ def fingerprint(logcan, sendcan, has_relay):
   car_fingerprint = None
   done = False
 
+  if cached_fingerprint is not None and use_car_caching:  # if we previously identified a car and fingerprint and user hasn't disabled caching
+    cached_fingerprint = json.loads(cached_fingerprint)
+    if cached_fingerprint[0] is None or len(cached_fingerprint) < 3:
+      params.delete('CachedFingerprint')
+    else:
+      finger[0] = {int(key): value for key, value in cached_fingerprint[2].items()}
+      source = car.CarParams.FingerprintSource.can
+      return (str(cached_fingerprint[0]), finger, vin, car_fw, cached_fingerprint[1])
+    
   while not done:
     a = get_one_can(logcan)
 
@@ -185,6 +201,7 @@ def fingerprint(logcan, sendcan, has_relay):
     source = car.CarParams.FingerprintSource.fixed
 
   cloudlog.warning("fingerprinted %s", car_fingerprint)
+  put_nonblocking("CachedFingerprint", json.dumps([car_fingerprint, source, {int(key): value for key, value in finger[0].items()}]))
   put_nonblocking('dp_car_detected', car_fingerprint)
   return car_fingerprint, finger, vin, car_fw, source
 

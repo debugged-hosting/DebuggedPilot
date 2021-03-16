@@ -135,6 +135,10 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     waitingMode @103;
     reverseGearArne @104;
     latControlDisabled @105;
+    preKeepHandsOnWheel @106;
+    promptKeepHandsOnWheel @107;
+    keepHandsOnWheel @108;
+    wrongGearArne @109;
   }
 }
 
