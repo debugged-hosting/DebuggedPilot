@@ -10,6 +10,7 @@ import threading
 import numpy as np
 # setup logging
 import logging
+import subprocess
 import logging.handlers
 from scipy import spatial
 import selfdrive.crash as crash
@@ -22,7 +23,9 @@ from selfdrive.version import version, dirty
 from common.transformations.coordinates import geodetic2ecef
 from selfdrive.mapd.mapd_helpers import MAPS_LOOKAHEAD_DISTANCE, Way, circle_through_points, rate_curvature_points
 from selfdrive.trafficd.traffic_manager import TrafficdThread
+from common.op_params import opParams
 
+traffic_lights = opParams().get('traffic_lights')
 #DEFAULT_SPEEDS_BY_REGION_JSON_FILE = BASEDIR + "/selfdrive/mapd/default_speeds_by_region.json"
 #from selfdrive.mapd import default_speeds_generator
 #default_speeds_generator.main(DEFAULT_SPEEDS_BY_REGION_JSON_FILE)
@@ -45,7 +48,7 @@ class LoggerThread(threading.Thread):
     def save_gps_data(self, gps, osm_way_id):
         try:
             location = [gps.speed, gps.bearing, gps.latitude, gps.longitude, gps.altitude, gps.accuracy, time.time(), osm_way_id]
-            with open("/data/openpilot/selfdrive/data_collection/gps-data", "a") as f:
+            with open("/data/gps-data", "a") as f:
                 f.write("{}\n".format(location))
         except:
             self.logger.error("Unable to write gps data to external file")
@@ -70,6 +73,7 @@ class QueryThread(LoggerThread):
         }
         self.prev_ecef = None
         self.trafficd_thread = TrafficdThread()
+        self.traffic_light_in_range = False
         
     def is_connected_to_local(self, timeout=3.0):
         try:
@@ -120,7 +124,6 @@ class QueryThread(LoggerThread):
 
     def run(self):
         self.logger.debug("run method started for thread %s" % self.name)
-
         # for now we follow old logic, will be optimized later
         start = time.time()
         radius = 3000
@@ -132,7 +135,13 @@ class QueryThread(LoggerThread):
                 continue
             else:
                 start = time.time()
-
+                
+            if self.trafficd_thread.running and not self.traffic_light_in_range and traffic_lights:
+              self.trafficd_thread.stop()
+            if self.traffic_light_in_range and not self.trafficd_thread.running and traffic_lights:
+              subprocess.call(['pkill','-f','_trafficd'])
+              self.trafficd_thread.start()
+                
             self.logger.debug("Starting after sleeping for 1 second ...")
             last_gps = self.sharedParams.get('last_gps', None)
             self.logger.debug("last_gps = %s" % str(last_gps))
@@ -224,20 +233,16 @@ class QueryThread(LoggerThread):
                         query_lock.release()
                     else:
                         self.logger.error("There is not query_lock")
-                    traffic_light_in_range = False
+                    self.traffic_light_in_range = False
                     for n in real_nodes:
                         if 'highway' in n.tags:
                             if n.tags['highway'] == 'traffic_signals':
-                                traffic_light_in_range = True
+                                self.traffic_light_in_range = True
                                 break
                         if 'railway' in n.tags:
                             if n.tags['railway'] == 'level_crossing':
-                                traffic_light_in_range = True
+                                self.traffic_light_in_range = True
                                 break
-                    if self.trafficd_thread.running and not traffic_light_in_range:
-                        self.trafficd_thread.stop()
-                    if traffic_light_in_range and not self.trafficd_thread.running:
-                        self.trafficd_thread.start()
 
                 except Exception as e:
                     self.logger.error("ERROR :" + str(e))
@@ -246,11 +251,13 @@ class QueryThread(LoggerThread):
                     query_lock.acquire()
                     self.sharedParams['last_query_result'] = None
                     query_lock.release()
+                    self.traffic_light_in_range = False
             else:
                 query_lock = self.sharedParams.get('query_lock', None)
                 query_lock.acquire()
                 self.sharedParams['last_query_result'] = None
                 query_lock.release()
+                self.traffic_light_in_range = False
 
             self.logger.debug("end of one cycle in endless loop ...")
 
@@ -537,6 +544,7 @@ class MessagedArneThread(LoggerThread):
             self.sm.update(0)
             if self.sm.updated['trafficModelEvent']:
               traffic_status = self.sm['trafficModelEvent'].status
+              #print(traffic_status)
               traffic_confidence = round(self.sm['trafficModelEvent'].confidence * 100, 2)
               if traffic_confidence >= 50 and (traffic_status == 'GREEN' or traffic_status == 'SLOW'):
                 last_not_none_signal = traffic_status

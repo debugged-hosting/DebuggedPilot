@@ -7,6 +7,9 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
 from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, SteerLimitParams, TSS2_CAR
 from opendbc.can.packer import CANPacker
 from common.dp_common import common_controller_ctrl
+from common.op_params import opParams
+
+speed_signs_in_mph = opParams().get('speed_signs_in_mph')
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -32,6 +35,63 @@ def set_blindspot_debug_mode(lr,enable):
 def poll_blindspot_status(lr):
   m = lr + b'\x02\x21\x69\x00\x00\x00\x00'
   return make_can_msg(0x750, m, 0)
+
+def create_rsa1_command(packer,TSGN1,SPDVAL1,SPLSGN1,TSGNHLT1,TSGN2,SPDVAL2,SPLSGN2,TSGNHLT2,SYNCID1):
+ """Creates a CAN message for the Road Sign System."""
+ values = {
+   "TSGN1": TSGN1,
+   "TSGNGRY1": 0,
+   "TSGNHLT1": TSGNHLT1,
+   "SPDVAL1": SPDVAL1,
+   "SPLSGN1": SPLSGN1,
+   "SPLSGN2": SPLSGN2,
+   "TSGN2": TSGN2,
+   "TSGNGRY2": 0,
+   "TSGNHLT2": TSGNHLT2,
+   "SPDVAL2": SPDVAL2,
+   "BZRRQ_P": 0,
+   "BZRRQ_A": 0,
+   "SYNCID1": SYNCID1,
+ }
+
+ return packer.make_can_msg("RSA1", 0, values)
+
+def create_rsa2_command(packer,TSGN3,SPLSGN3,TSGN4,SPLSGN4,DPSGNREQ,SGNNUMP,SGNNUMA,SPDUNT,SYNCID2):
+ """Creates a CAN message for the Road Sign System."""
+ values = {
+   "TSGN3": TSGN3,
+   "TSGNGRY3": 0,
+   "TSGNHLT3": 0,
+   "SPLSGN3": SPLSGN3,
+   "SPLSGN4": SPLSGN4,
+   "TSGN4": TSGN4,
+   "TSGNGRY4": 0,
+   "TSGNHLT4": 0,
+   "DPSGNREQ": DPSGNREQ,
+   "SGNNUMP": SGNNUMP,
+   "SGNNUMA": SGNNUMA,
+   "SPDUNT": SPDUNT,
+   "TSRWMSG": 0,
+   "SYNCID2": SYNCID2,
+ }
+
+ return packer.make_can_msg("RSA2", 0, values)
+
+def create_rsa3_command(packer,OVSPVALL,OVSPVALM,OVSPVALH,NTLVLSPD,TSRSPU):
+ """Creates a CAN message for the Road Sign System."""
+ values = {
+   "TSREQPD": 1,
+   "TSRMSW": 1,
+   "OTSGNNTM": 3,
+   "NTLVLSPD": NTLVLSPD,
+   "OVSPNTM": 3,
+   "OVSPVALL": OVSPVALL,
+   "OVSPVALM": OVSPVALM,
+   "OVSPVALH": OVSPVALH,
+   "TSRSPU": TSRSPU,
+ }
+
+ return packer.make_can_msg("RSA3", 0, values)
 
 def accel_hysteresis(accel, accel_steady, enabled):
 
@@ -59,7 +119,9 @@ class CarController():
     self.blindspot_blink_counter_right = 0
     self.blindspot_debug_enabled_left = False
     self.blindspot_debug_enabled_right = False
-
+    
+    self.rsa_sync_counter = 0
+    
     self.last_fault_frame = -200
     self.steer_rate_limited = False
 
@@ -124,7 +186,8 @@ class CarController():
       self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if lkas == 0 or not enabled or (frame - self.last_fault_frame < 100) or abs(CS.out.steeringRate) > 100 or (abs(CS.out.steeringAngle) > 150 and CS.CP.carFingerprint in [CAR.RAV4H, CAR.PRIUS]):
+    if lkas == 0 or not enabled or (frame - self.last_fault_frame < 100) or abs(CS.out.steeringRate) > 100 or abs(CS.out.steeringAngle) > 400 \
+    or (abs(CS.out.steeringAngle) > 150 and CS.CP.carFingerprint in [CAR.RAV4H, CAR.PRIUS]):
       apply_steer = 0
       apply_steer_req = 0
     else:
@@ -278,5 +341,32 @@ class CarController():
         #can_sends.append(make_can_msg(0x750, b'\x42\x02\x21\x69\x00\x00\x00\x00', 0))
         can_sends.append(poll_blindspot_status(RIGHT_BLINDSPOT))
         #print("debug Right blindspot poll")
+        
+    if frame > 200:
+      if frame % 100 == 0:
+        if speed_signs_in_mph:
+          smartspeed =round(CS.smartspeed*2.23694)
+          tsgn1 = 36 if CS.smartspeed > 0 else 0
+        else:
+          smartspeed = round(CS.smartspeed*3.6)
+          tsgn1 = 1 if CS.smartspeed > 0 else 0
+        TSGNHLT1 = 1 if CS.out.vEgo > CS.smartspeed else 0
+        can_sends.append(create_rsa1_command(self.packer,tsgn1,smartspeed,0,TSGNHLT1,CS.tsgn1,CS.spdval1,CS.splsgn1,CS.tsgnhlt1,self.rsa_sync_counter + 1))
+        can_sends.append(create_rsa2_command(self.packer,CS.tsgn3,CS.splsgn3,CS.tsgn4,CS.splsgn4,1,1,3,1,self.rsa_sync_counter + 1))
+        if CS.CP.carFingerprint in TSS2_CAR:
+          can_sends.append(create_rsa3_command(self.packer,1,3,5,1,2))
+        else:
+          can_sends.append(create_rsa3_command(self.packer,2,5,10,3,1))
+        #print (str(self.rsa_sync))
+        self.rsa_sync_counter = (self.rsa_sync_counter + 1 ) % 15
+    else:
+      if frame % 100 == 0:
+        can_sends.append(create_rsa1_command(self.packer,0,0,0,0,0,0,0,0,self.rsa_sync_counter + 1))
+        can_sends.append(create_rsa2_command(self.packer,0,0,0,0,0,0,0,0,self.rsa_sync_counter + 1))
+        if CS.CP.carFingerprint in TSS2_CAR:
+          can_sends.append(create_rsa3_command(self.packer,0,0,0,1,0))
+        else:
+          can_sends.append(create_rsa3_command(self.packer,-5,-5,-5,3,1))
+        self.rsa_sync_counter = (self.rsa_sync_counter + 1 ) % 15
 
     return can_sends

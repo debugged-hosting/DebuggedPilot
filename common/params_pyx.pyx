@@ -17,6 +17,7 @@ cdef enum TxType:
 keys = {
   b"AccessToken": [TxType.CLEAR_ON_MANAGER_START],
   b"AthenadPid": [TxType.PERSISTENT],
+  b"CachedFingerprint": [TxType.CLEAR_ON_PANDA_DISCONNECT],
   b"CalibrationParams": [TxType.PERSISTENT],
   b"CarBatteryCapacity": [TxType.PERSISTENT],
   b"CarParams": [TxType.CLEAR_ON_MANAGER_START, TxType.CLEAR_ON_PANDA_DISCONNECT],
@@ -32,6 +33,7 @@ keys = {
   b"GitCommit": [TxType.PERSISTENT],
   b"GitRemote": [TxType.PERSISTENT],
   b"GithubSshKeys": [TxType.PERSISTENT],
+  b"HandsOnWheelMonitoring": [TxType.PERSISTENT],
   b"HasAcceptedTerms": [TxType.PERSISTENT],
   b"HasCompletedSetup": [TxType.PERSISTENT],
   b"IsDriverViewEnabled": [TxType.CLEAR_ON_MANAGER_START],

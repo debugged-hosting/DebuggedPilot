@@ -272,13 +272,14 @@ def thermald_thread():
           cloudlog.info("Setting up EON fan handler")
           setup_eon_fan()
           handle_fan = handle_fan_eon
-
-      # Handle disconnect
-      if health_prev is not None:
-        if health.health.hwType == log.HealthData.HwType.unknown and \
-          health_prev.health.hwType != log.HealthData.HwType.unknown:
-          params.panda_disconnect()
+        
+      # Handle connect
+      if health is not None and health_prev is None:#if health_prev is None:
+      #  if health.health.hwType != log.HealthData.HwType.unknown and \
+      #    health_prev.health.hwType == log.HealthData.HwType.unknown:
+        params.panda_disconnect()
       health_prev = health
+
 
     # get_network_type is an expensive call. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
